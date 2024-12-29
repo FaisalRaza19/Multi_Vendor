@@ -58,8 +58,8 @@ const Admin_Products = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-4">
       {/* Product Table */}
-      <div className="overflow-x-auto bg-white rounded-lg shadow-lg p-4">
-        <table className="table-auto w-full">
+      <div className="overflow-x-auto bg-white rounded-lg shadow-lg">
+        <table className="able-auto w-full">
           <thead>
             <tr className="bg-gray-200">
               <th className="p-2">Image</th>
@@ -79,7 +79,12 @@ const Admin_Products = () => {
                     className="w-12 h-12"
                   />
                 </td>
-                <td className="p-2">{product.title}</td>
+                <td className="p-2">
+                  {product.title}
+                  <p className="text-gray-500 text-sm">
+                    {product.description}
+                  </p>
+                </td>
                 <td className="p-2">${product.price}</td>
                 <td className="p-2">{product.totalSold}</td>
                 <td className="p-2 text-center">
@@ -111,9 +116,7 @@ const Admin_Products = () => {
               className="w-full h-64 object-cover mb-4"
             />
             <p>{selectedProduct.description}</p>
-            <p className="text-gray-600 my-2">
-              Price: ${selectedProduct.price}
-            </p>
+            <p className="text-gray-600 my-2">Price: ${selectedProduct.price}</p>
             <p className="text-gray-600">Ratings: {selectedProduct.ratings}</p>
             <p className="text-gray-600">Reviews: {selectedProduct.reviews}</p>
             <button
@@ -128,8 +131,8 @@ const Admin_Products = () => {
 
       {/* Edit Form Popup */}
       {isEditing && formData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center'>
+          <div className={`bg-white rounded-lg p-6 w-full max-w-lg overflow-y-auto ${formData.offer ? 'mt-20' : 'mt-8'} max-h-[90vh]`}>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Edit Product</h2>
               <FaTimes
@@ -142,12 +145,16 @@ const Admin_Products = () => {
             </div>
             <form>
               <div className="mb-4">
-                <label className="block mb-2">Image URL</label>
+                <label className="block mb-2">Image File</label>
                 <input
-                  type="text"
+                  type="file"
                   name="img"
-                  value={formData.img}
-                  onChange={handleChange}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      img: URL.createObjectURL(e.target.files[0]),
+                    })
+                  }
                   className="border p-2 w-full rounded"
                 />
               </div>
@@ -210,7 +217,7 @@ const Admin_Products = () => {
                   type="button"
                   className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
                 >
-                  Edit
+                  Save
                 </button>
                 <button
                   type="button"
