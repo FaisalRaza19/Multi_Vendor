@@ -1,4 +1,4 @@
-const port = 8000;
+const port = 5587;
 const api = {
     register: `http://localhost:${port}/user/register`,
     codeVerify: `http://localhost:${port}/user/verify-register`,

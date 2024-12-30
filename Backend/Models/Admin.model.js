@@ -1,15 +1,17 @@
 import mongoose, { Schema } from "mongoose";
 import { BankAccountSchema } from "./bank.model.js";
 import { addProduct } from "./addProductModel.js";
-import {orderSchema} from "./Orders.model.js"
+import { orderSchema } from "./Orders.model.js"
 
 const adminSchema = new mongoose.Schema(
     {
         personalInfo: {
-            userId: {
-                type: Schema.Types.ObjectId,
-                ref: "User",
+            email: {
+                type: String,
                 required: true,
+                index: true,
+                unique: true,
+                lowercase: true,
             },
             address: {
                 country: {
@@ -41,6 +43,14 @@ const adminSchema = new mongoose.Schema(
             index: true,
             trim: true,
         },
+        shopDescription : {
+            type: String,
+            required: true,
+        },
+        password: {
+            type: String,
+            required: true,
+        },
         phoneNumber: {
             type: String,
             required: true,
@@ -48,28 +58,30 @@ const adminSchema = new mongoose.Schema(
             index: true,
             trim: true,
         },
-        shopLogo : {
-            url : {
-                type : String,
-                default : "",
+        shopLogo: {
+            url: {
+                type: String,
+                default: "",
             },
-            publicId : {
-                type : String,
-                default : "",
+            publicId: {
+                type: String,
+                default: "",
             }
         },
         bankDetails: {
             type: BankAccountSchema,
-            required: true,
         },
         products: [addProduct],
-        Orders : [orderSchema],
+        Orders: [orderSchema],
         completedOrder: [
             {
                 type: Schema.Types.ObjectId,
                 ref: "Order",
             },
         ],
+        refreshToken: {
+            type: String,
+        }
     },
     {
         timestamps: true,

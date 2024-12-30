@@ -1,262 +1,214 @@
-import { sendOTP, verifyOTP } from "../../utils/phoneVerify.js";
+import jsonWebToken from "jsonwebtoken";
+import bcrypt from "bcryptjs"
 import { Shops } from "../../Models/Admin.model.js";
-import { User } from "../../Models/user.model.js";
+import { sendEmail, verifyEmail } from "../../utils/sendAndVeriefyEmail.js"
+import { InputVerifier } from "../../utils/InputVerifier.js"
 import { fileUploadOnCloudinary } from "../../utils/fileUploadAndRemoveFromCloudinary.js";
 import { removeFileFromCloudinary } from "../../utils/fileUploadAndRemoveFromCloudinary.js";
-import IBAN from "iban";
-import CryptoJS from "crypto-js";
 
-// Encryption function
-function encryptNumber(number, secretKey) {
-    return CryptoJS.AES.encrypt(number.toString(), secretKey).toString();
-}
-
-// Decryption function
-function decryptNumber(encrypted, secretKey) {
-    const bytes = CryptoJS.AES.decrypt(encrypted, secretKey);
-    return bytes.toString(CryptoJS.enc.Utf8);
-}
-
-// validate input fields
-const validateShopDetails = ({ shopName, phoneNumber, bankName, accountHolderName, country, state, city, homeAddress, zipCode, }) => {
-    const errors = [];
-
-    // Validate shopName (minimum 3 characters)
-    if (!shopName || shopName.trim().length < 3) {
-        errors.push("Shop name must be at least 3 characters.");
-    }
-
-    // Validate phoneNumber (10-15 digits, allow spaces, dashes, or parentheses)
-    if (!phoneNumber || !/^\+?[0-9]{10,15}$/.test(phoneNumber)) {
-        errors.push("Phone number must be between 10 and 15 digits and can optionally start with '+'.");
-    }
-
-    // Validate bankName (minimum 3 characters)
-    if (!bankName || bankName.trim().length < 3) {
-        errors.push("Bank name must be at least 3 characters.");
-    }
-
-    // Validate accountHolderName (only letters and spaces, minimum 3 characters)
-    if (
-        !accountHolderName ||
-        !/^[a-zA-Z]+(?:\s[a-zA-Z]+)*$/.test(accountHolderName.trim()) ||
-        accountHolderName.trim().length < 3
-    ) {
-        errors.push("Account holder name must be at least 3 characters and contain only letters and spaces.");
-    }
-
-    // Validate country (minimum 3 characters)
-    if (!country || country.trim().length < 3) {
-        errors.push("Country must be at least 3 characters.");
-    }
-
-    // Validate state (minimum 3 characters)
-    if (!state || state.trim().length < 3) {
-        errors.push("State must be at least 3 characters.");
-    }
-
-    // Validate city (minimum 3 characters)
-    if (!city || city.trim().length < 3) {
-        errors.push("City must be at least 3 characters.");
-    }
-
-    // Validate homeAddress (minimum 5 characters)
-    if (!homeAddress || homeAddress.trim().length < 5) {
-        errors.push("Home address must be at least 5 characters.");
-    }
-
-    // Validate zipCode (numeric, or alphanumeric based on format, e.g., US ZIP code)
-    if (!zipCode || !/^\d{5}(-\d{4})?$/.test(zipCode.trim())) {
-        errors.push("ZIP code must be a valid US ZIP code (e.g., 12345 or 12345-6789).");
-    }
-
-    return errors;
-}
-
-// Get information and send code
-const shopAdmin = async (req, res) => {
+// get shop info 
+const RegisterShop = async (req, res) => {
     try {
-        const userId = req.user?._id;
-        if (!userId) {
-            return res.status(400).json({ message: "User does not exist." });
-        }
+        const { shopName, shopDescription, phoneNumber, email, password, country, state, city, zipCode, homeAddress } = req.body;
 
-        // Check for encryption key
-        const secretKey = process.env.SECRET_KEY;
-        if (!secretKey) {
-            return res.status(500).json({ message: "Encryption key not found." });
+        if (!shopName || !shopDescription || !phoneNumber || !email || !password || !country || !state || !city || !zipCode || !homeAddress) {
+            return res.status(400).json({ message: "All fields are required" });
         }
-
-        const { shopName, phoneNumber, bankName, accountHolderName, accountNumber, country, state, city, homeAddress, zipCode } = req.body;
 
         // Validate input fields
-        const errors = validateShopDetails({
-            shopName, phoneNumber, bankName, accountHolderName, country, state, city, homeAddress, zipCode
+        const validationResult = InputVerifier(req.body);
+        if (validationResult !== true) {
+            return res.status(400).json({ message: "Invalid input", errors: validationResult });
+        }
+
+        // Check if email and phone number already exists
+        const existingUser = await Shops.findOne({
+            $or: [
+                { "personalInfo.email": email },
+                { phoneNumber: phoneNumber }
+            ]
         });
-
-        if (errors.length) {
-            return res.status(400).json({ message: "Validation error.", errors });
+        if (existingUser) {
+            return res.status(400).json({ message: "User already exists with this email or phone number." });
         }
 
-        if (!IBAN.isValid(accountNumber)) {
-            return res.status(400).json({ message: "account number is invalid." });
+        // Send OTP to email
+        const otpCode = await sendEmail(email);
+        console.log(otpCode)
+        if (!otpCode) {
+            return res.status(500).json({ message: "Failed to send verification code" });
         }
 
-        // send otp code 
-        const otpResponse = await sendOTP(phoneNumber);
-        if (otpResponse.error) {
-            return res.status(500).json({ message: "Failed to send OTP." });
-        }
-        console.log(otpResponse.code);
+        // Store OTP and admin data in session
+        req.session.code = otpCode;
+        req.session.adminData = req.body;
 
-        const encryptedAccountNumber = encryptNumber(accountNumber, secretKey);
-
-        req.session.bankDetails = { bankName, accountHolderName, encryptedAccountNumber };
-        req.session.userData = { userId: userId._id, shopName, phoneNumber };
-        req.session.code = otpResponse.code;
-        req.session.address = { country, state, city, homeAddress, zipCode };
-
-        return res.status(200).json({ message: "Otp send to your phone number" });
+        return res.status(200).json({ message: "Verification code sent to your email. Please verify it." });
     } catch (error) {
-        console.error("Error in getShop:", error);
-        return res.status(500).json({
-            message: "Something went wrong while retrieving the shop.",
-            error: error.message,
-        });
+        console.error("Error in registerShop:", error);
+        return res.status(500).json({ message: "Failed to register shop", error: error.message });
     }
 };
 
-// resend code to number 
-const resendCodeToNumber = async (req, res) => {
+// resend code on email 
+const resendVerificationCode = async (req, res) => {
     try {
-        const { userData } = req.session;
-        if (!userData) {
-            return res.status(400).json({ message: "session is expire please try again." })
+        const { admin_data } = req.session;
+        if (!admin_data || !admin_data.email) {
+            return res.status(400).json({ message: "Session expired or user not found." });
         }
 
-        // send code to number
-        const otpResponse = await sendOTP(phoneNumber);
-        if (otpResponse.error) {
-            return res.status(500).json({ message: "Failed to send OTP." });
-        }
-        console.log(otpResponse.code);
+        const verificationCode = await sendEmail(admin_data.email);
+        req.session.code = verificationCode;
 
-        req.session.code = otpResponse.code;
-        return res.status(400).json({ message: "OTP send to your phone number please verify it" });
+        return res.status(200).json({ message: "New verification code sent to your email." });
     } catch (error) {
-        return res.status(500).json({
-            message: "Something went wrong while retrieving the shop.",
-            error: error.message,
-        });
+        console.error("Error in resendVerificationCode:", error);
+        return res.status(500).json({ message: "Error while resending verification code.", error: error.message });
     }
-}
+};
 
-// add shop in data base 
-const registerShop = async (req, res) => {
+// verify code and create shop in db
+const verifyAndCreate = async (req, res) => {
     try {
-        const { otpCode } = req.body;
-        if (!otpCode) {
-            return res.status(400).json({ message: "verification code is required." })
-        }
-        const { bankDetails, userData, address, code } = req.session;
-        // check code 
-        const isValid = verifyOTP(otpCode, code)
-        if (!isValid || !bankDetails || !userData || !address) {
-            return res.status(400).json({ message: "Shop data not found in session. Please complete the Shop registration process again." })
-        }
-        const { bankName, accountHolderName, encryptedAccountNumber } = req.session.bankDetails;
-        const { userId, shopName, phoneNumber } = req.session.userData;
-        const { country, state, city, homeAddress, zipCode } = req.session.address;
+        const { otp } = req.body;
 
-        // Create new shop
+        if (!otp || otp.length !== 6 || isNaN(otp)) {
+            return res.status(400).json({ message: "Invalid OTP. It must be a 6-digit number." });
+        }
+
+        const { code, adminData } = req.session;
+        if (!code || !adminData) {
+            return res.status(400).json({ message: "Session expired. Please register again." });
+        }
+
+        // Verify OTP
+        const isVerified = verifyEmail(otp, code);
+        if (!isVerified) {
+            return res.status(400).json({ message: "Invalid verification code." });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(adminData.password, 10);
+        if (!hashedPassword) {
+            return res.status(500).json({ message: "Failed to hash password." });
+        }
+
+        // Create shop in the database
         const newShop = await Shops.create({
             personalInfo: {
-                userId,
+                email: adminData.email,
                 address: {
-                    country,
-                    state,
-                    city,
-                    homeAddress,
-                    zipCode,
-                },
+                    country: adminData.country,
+                    state: adminData.state,
+                    city: adminData.city,
+                    homeAddress: adminData.homeAddress,
+                    zipCode: adminData.zipCode,
+                }
             },
-            shopName,
-            phoneNumber,
-            bankDetails: { bankName, accountHolderName, encryptedAccountNumber },
+            password: hashedPassword,
+            shopName: adminData.shopName,
+            shopDescription: adminData.shopDescription,
+            phoneNumber: adminData.phoneNumber,
         });
 
-        // Clear session data
-        req.session.bankDetails = null;
-        req.session.userData = null;
+        // Generate tokens
+        const refreshToken = jsonWebToken.sign(
+            { id: newShop._id },
+            process.env.ADMIN_REFRESH_TOKEN_SECRET,
+            { expiresIn: process.env.ADMIN_REFRESH_TOKEN_EXPIRY }
+        );
+
+        const accessToken = jsonWebToken.sign(
+            { id: newShop._id },
+            process.env.ADMIN_ACCESS_TOKEN_SECRET,
+            { expiresIn: process.env.ADMIN_ACCESS_TOKEN_EXPIRY }
+        );
+
+        newShop.refreshToken = refreshToken;
+        await newShop.save();
+
+        // Retrieve created shop without sensitive data
+        const createdUser = await Shops.findById(newShop._id).select("-password -refreshToken");
+
+        if (!createdUser) {
+            return res.status(500).json({ message: "Failed to retrieve created shop." });
+        }
+
+        // clear session 
         req.session.code = null;
-        req.session.address = null;
+        req.session.adminData = null;
 
         return res.status(200).json({
             message: "Shop created successfully.",
-            data: newShop,
+            data: { createdUser, accessToken }
         });
     } catch (error) {
-        return res.status(500).json({ message: "something went wrong to register shop", error: error })
-    }
-}
-
-// get shop 
-const getShop = async (req, res) => {
-    try {
-        // Ensure user is authenticated
-        const userId = req.user?._id;
-        if (!userId) {
-            return res.status(404).json({ message: "User not authenticated" });
-        }
-
-        // Verify encryption key is set
-        const secretKey = process.env.SECRET_KEY;
-        if (!secretKey) {
-            return res.status(500).json({ message: "Encryption key not found." });
-        }
-
-        // Fetch shop details, excluding sensitive fields
-        const shop = await Shops.findOne({ "personalInfo.userId": userId }).select("-personalInfo -phoneNumber");
-
-        // Return 404 if shop not found
-        if (!shop) {
-            return res.status(404).json({ message: "Shop not found." });
-        }
-
-        const { bankDetails } = shop;
-        let decryptedNumber = null;
-
-        // Decrypt account number if available
-        if (bankDetails?.encryptedAccountNumber) {
-            decryptedNumber = decryptNumber(bankDetails.encryptedAccountNumber, secretKey);
-        }
-
-        // Return shop data with decrypted bank details
-        return res.status(200).json({
-            statusCode: 200,
-            data: shop,
-            bankDetails: {
-                holderName: bankDetails?.accountHolderName,
-                bankName: bankDetails?.bankName,
-                accountNumber: decryptedNumber,
-            },
-            message: "Shop retrieved successfully.",
-        });
-
-    } catch (error) {
-        console.error("Error in getShop:", error);
-        return res.status(500).json({
-            message: "Something went wrong while retrieving the shop.",
-            error: error.message,
-        });
+        console.error("Error in verifyAndCreateShop:", error);
+        return res.status(500).json({ message: "Failed to verify and create shop", error: error.message });
     }
 };
+
+//  login into shop
+const shopLogin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!req.body) {
+            return res.status(400).json({ message: "all fields are required" })
+        }
+        // validate input
+        const verifyInput = InputVerifier(req.body)
+        if (verifyInput !== true) {
+            return res.status(400).json({ messages: "Invalid input", error: validateInput })
+        };
+
+        // find the user 
+        const user = await Shops.findOne({ "personalInfo.email": email });
+        if (!user) {
+            return res.status(400).json({ messages: "User did not found" });
+        }
+
+        // check password
+        const checkPassword = await bcrypt.compare(password, user.password)
+        if (!checkPassword) {
+            return res.status(400).json({ message: "Incorrect password." });
+        };
+
+        // create tokens 
+        const refreshToken = jsonWebToken.sign(
+            { id: user._id },
+            process.env.ADMIN_REFRESH_TOKEN_SECRET,
+            { expiresIn: process.env.ADMIN_REFRESH_TOKEN_EXPIRY }
+        );
+
+        const accessToken = jsonWebToken.sign(
+            { id: user._id },
+            process.env.ADMIN_ACCESS_TOKEN_SECRET,
+            { expiresIn: process.env.ADMIN_ACCESS_TOKEN_EXPIRY }
+        );
+
+        user.refreshToken = refreshToken;
+        await user.save();
+
+        // check user log in 
+        const userLogin = await Shops.findById(user._id).select("-password -refreshToken");
+        if (!userLogin) {
+            return res.status(500).json({ message: "An error occurred while logging in." });
+        }
+
+        return res.status(200).json({ statusCode: 200, data: { userLogin, accessToken }, message: "user login into the shop Successfully" });
+    } catch (error) {
+        return res.status(500).json({ message: "internal server error to login the shop", error: error })
+    }
+}
 
 // update shop logo 
 const updateShopLogo = async (req, res) => {
     try {
-        // Get user id from req.user
-        const userId = req.user._id;
+        const userId = req.admin._id;
+        if (!userId) {
+            return res.status(400).json({ message: "User did not found" })
+        };
 
         // Check if shopLogo file is provided
         if (!req.files || !req.files.shopLogo || req.files.shopLogo.length === 0) {
@@ -266,16 +218,10 @@ const updateShopLogo = async (req, res) => {
         // Get shopLogo file path from req.files
         const shopLogo = req.files.shopLogo[0].path;
 
-        // Check if the user exists
-        const user = await User.findById(userId).select("-password -refreshToken");
-        if (!user) {
-            return res.status(404).json({ message: "User does not exist" });
-        }
-
-        // Find the shop associated with the user
-        const shop = await Shops.findOne({ "personalInfo.userId": userId });
+        // Check if the Shop exists
+        const shop = await Shops.findById(userId).select("-password -refreshToken");
         if (!shop) {
-            return res.status(404).json({ message: "Shop not found for this user" });
+            return res.status(404).json({ message: "User does not exist" });
         }
 
         // Upload shopLogo to Cloudinary
@@ -304,144 +250,167 @@ const updateShopLogo = async (req, res) => {
     }
 };
 
-// edit shop
-const editShop = async (req, res) => {
+// logout into the shop 
+const shopLogOut = async (req, res) => {
     try {
-        // Check for authenticated user
-        const userId = req.user?._id;
+        const userId = req.admin._id;
         if (!userId) {
-            return res.status(400).json({ message: "User does not exist." });
-        }
+            return res.status(400).json({ message: "User did not found" })
+        };
 
-        // Check for encryption key
-        const secretKey = process.env.SECRET_KEY;
-        if (!secretKey) {
-            return res.status(500).json({ message: "Encryption key not found." });
-        }
-
-        const { shopName, phoneNumber, bankName, accountHolderName, accountNumber, country, state, city, homeAddress, zipCode } = req.body;
-
-        // Validate input fields
-        const errors = validateShopDetails({
-            shopName, phoneNumber, bankName, accountHolderName, country, state, city, homeAddress, zipCode
-        });
-
-        if (errors.length) {
-            return res.status(400).json({ message: "Validation error.", errors });
-        }
-
-
-        if (!IBAN.isValid(accountNumber)) {
-            return res.status(400).json({ message: "Please enter a valid account number (IBAN)." });
-        }
-
-        const encryptedNumber = encryptNumber(accountNumber, secretKey);
-
-        // Retrieve the existing shop data
-        const existingShop = await Shops.findOne({ "personalInfo.userId": userId }).select("phoneNumber");
-
-        // Check if phone number has changed
-        if (existingShop.phoneNumber !== phoneNumber) {
-            const otpResponse = await sendOTP(phoneNumber);
-            if (otpResponse.error) {
-                return res.status(500).json({ message: "Failed to send OTP." });
-            }
-            console.log(otpResponse.code)
-            req.session.code = otpResponse.code;
-            req.session.isValid = false;
-        } else {
-            const shop = await Shops.findOne({ "personalInfo.userId": userId })
-            if (!shop) {
-                return res.status(404).json({ message: "User does not exist" });
-            }
-            const updatedShop = await shop.updateOne({
-                shopName,
-                phoneNumber,
-                bankDetails: {
-                    bankName,
-                    accountHolderName,
-                    encryptedAccountNumber: accountNumber,
-                },
-                "personalInfo.address": {
-                    country,
-                    state,
-                    city,
-                    homeAddress,
-                    zipCode,
-                },
-            });
-
-            if (!updatedShop) {
-                return res.status(500).json({ message: "Failed to update profile. Please try again." });
-            }
-
-            return res.status(200).json({ message: "Profile updated successfully", data: updatedShop});
-        }
-
-        // Save shop data in session for later update
-        req.session.shopData = { shopName, phoneNumber, bankName, accountHolderName, accountNumber: encryptedNumber, country, state, city, homeAddress, zipCode };
-
-        return res.status(200).json({ message: "OTP send to your phone Number please verify it." });
-    } catch (error) {
-        return res.status(500).json({ message: "Something went wrong while editing 123 shop", error });
-    }
-};
-
-// update shop in db
-const updateShop = async (req, res) => {
-    try {
-        const {otpCode} = req.body;
-        const userId = req.user?._id;
-        if (!userId) {
-            return res.status(401).json({ message: "Unauthorized user" });
-        }
-
-        const shop = await Shops.findOne({ "personalInfo.userId": userId })
+        // find the shop 
+        const shop = await Shops.findByIdAndUpdate(userId, { $set: { refreshToken: "" } })
         if (!shop) {
             return res.status(404).json({ message: "User does not exist" });
         }
 
-        const { code, shopData } = req.session;
-        if (code !== null) {
-            const isValid = verifyOTP(code, otpCode)
-            if (!shopData || !isValid) {
-                return res.status(400).json({ message: "User data not found in session or verification incomplete. Please complete the edit profile process again." });
-            }
+        // clear cookies 
+        res.clearCookie("accessToken");
+        res.clearCookie("refreshToken")
 
-            const { shopName, phoneNumber, bankName, accountHolderName, accountNumber, country, state, city, homeAddress, zipCode } = shopData;
-
-            // Update the user profile
-            const updatedShop = await shop.updateOne({
-                shopName,
-                phoneNumber,
-                bankDetails: {
-                    bankName,
-                    accountHolderName,
-                    encryptedAccountNumber: accountNumber,
-                },
-                "personalInfo.address": {
-                    country,
-                    state,
-                    city,
-                    homeAddress,
-                    zipCode,
-                },
-            });
-
-            if (!updatedShop) {
-                return res.status(500).json({ message: "Failed to update profile. Please try again." });
-            }
-
-            // Clear session data after update
-            req.session.code = null;
-            req.session.shopData = null;
-            req.session.isValid = null;
-
-            return res.status(200).json({ message: "Profile updated successfully", data: updatedShop });
-        }
+        return res.status(200).json({ statusCode: 200, message: "User logOut to the Shop Successfully" })
     } catch (error) {
-        return res.status(500).json({ message: "something went wrong to update shop", error: error })
+        return res.status(500).json({ message: "internal server error to logOut the shop", error: error })
     }
 }
 
-export { shopAdmin, resendCodeToNumber, registerShop, getShop, updateShopLogo, editShop, updateShop };
+// get Shop 
+const getShop = async (req, res) => {
+    try {
+        const userId = req.admin._id;
+        if (!userId) {
+            return res.status(400).json({ message: "User did not found" })
+        };
+
+        // find the shop 
+        const shop = await Shops.findOne(userId).select("-refreshToken -password")
+        if (!shop) {
+            return res.status(404).json({ message: "User does not exist" });
+        }
+
+        return res.status(200).json({ statusCode: 200, data: { shop }, message: "Shop get Successfully" })
+    } catch (error) {
+        return res.status(500).json({ message: "internal server error to logOut the shop", error: error })
+    }
+}
+
+// edit shop 
+const editShop = async (req, res) => {
+    try {
+        const userId = req.admin._id;
+        if (!userId) {
+            return res.status(400).json({ message: "User did not found" })
+        };
+
+        const { shopName, shopDescription, phoneNumber, email, country, state, city, zipCode, homeAddress } = req.body;
+        if (!shopName || !shopDescription || !phoneNumber || !email || !country || !state || !city || !zipCode || !homeAddress) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        // Validate input fields
+        const validationResult = InputVerifier(req.body);
+        if (validationResult !== true) {
+            return res.status(400).json({ message: "Invalid input", errors: validationResult });
+        }
+
+        // find the shop 
+        const shop = await Shops.findOne(userId).select("-refreshToken -password")
+        if (!shop) {
+            return res.status(404).json({ message: "User does not exist" });
+        }
+
+        // check email is change 
+        if (shop.personalInfo.email !== email) {
+            // send code to email
+            const otpCode = await sendEmail(email);
+            console.log(otpCode)
+            if (!otpCode) {
+                return res.status(500).json({ message: "Failed to send verification code" });
+            }
+
+            req.session.code = otpCode;
+            req.session.adminData = req.body
+            return res.status(200).json({ statusCode: 200,message: "OTP send to your new email please verify it." })
+        }
+
+        const editShop = await shop.updateOne({
+            "personalInfo.address": {
+                country,
+                state,
+                city,
+                homeAddress,
+                zipCode,
+            },
+            shopName,
+            phoneNumber,
+            shopDescription,
+        })
+
+        if (!editShop) {
+            return res.status(500).json({ message: "Failed to update profile. Please try again." });
+        }
+        return res.status(200).json({ statusCode: 200, data: { editShop }, message: "Shop edit Successfully" })
+    } catch (error) {
+        return res.status(500).json({ message: "internal server error to edit the shop", error: error })
+    }
+}
+
+// verfiy email and edit the shop
+const verifyAndEdit = async (req, res) => {
+    try {
+        const { otp } = req.body;
+        if (!otp || otp.length !== 6 || isNaN(otp)) {
+            return res.status(400).json({ message: "Invalid OTP. It must be a 6-digit number." });
+        }
+        const userId = req.admin._id;
+        if (!userId) {
+            return res.status(400).json({ message: "User did not found" })
+        };
+        const { code, adminData } = req.session;
+        if (!code || !adminData) {
+            return res.status(400).json({ message: "Session expired. Please register again." });
+        }
+
+        // Verify OTP
+        const isVerified = verifyEmail(otp, code);
+        if (!isVerified) {
+            return res.status(400).json({ message: "Invalid verification code." });
+        }
+
+        // find shop 
+        const shop = await Shops.findOne(userId).select("-refreshToken -password")
+        if (!shop) {
+            return res.status(404).json({ message: "User does not exist" });
+        }
+
+        const editShop = await shop.updateOne({
+            "personalInfo": {
+                email: adminData.email,
+                adress: {
+                    country: adminData.country,
+                    state: adminData.state,
+                    city: adminData.city,
+                    homeAddress: adminData.homeAddress,
+                    zipCode: adminData.zipCode,
+                }
+            },
+            shopName: adminData.shopName,
+            phoneNumber: adminData.phoneNumber,
+            shopDescription: adminData.shopDescription,
+        })
+
+        if (!editShop) {
+            return res.status(500).json({ message: "Failed to update profile. Please try again." });
+        }
+
+        // clear session 
+        req.session.code = null;
+        req.session.adminData = null;
+        
+        return res.status(200).json({ statusCode: 200, data: { editShop }, message: "Shop edit Successfully" })
+    } catch (error) {
+        return res.status(500).json({ message: "internal server error to verify and edit the shop", error: error })
+    }
+}
+
+export { RegisterShop, resendVerificationCode, verifyAndCreate, shopLogin, updateShopLogo, shopLogOut, getShop,editShop,verifyAndEdit}

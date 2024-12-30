@@ -1,65 +1,45 @@
 import { User } from "../../Models/user.model.js";
 import bcryptjs from "bcryptjs";
 import jsonWebToken from "jsonwebtoken";
+import { InputVerifier } from "../../utils/InputVerifier.js"
 import { fileUploadOnCloudinary, removeFileFromCloudinary } from "../../utils/fileUploadAndRemoveFromCloudinary.js"
 import { userNameGenerator } from "../../utils/userNameGenerator.js";
 import { sendEmail, verifyEmail } from "../../utils/sendAndVeriefyEmail.js";
-
-// validate input
-const validateInput = ({ fullName, email, userName, password }) => {
-    const errors = [];
-
-    if (fullName !== undefined) {
-        if (!fullName || fullName.length < 3) {
-            errors.push("Name must be at least 3 characters.");
-        }
-    }
-
-    if (email !== undefined) {
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length < 15) {
-            errors.push("Invalid email format. Email must be at least 15 characters.");
-        }
-    }
-
-    if (userName !== undefined) {
-        if (!userName || userName.length < 3 || /\s/.test(userName)) {
-            errors.push("Username must be at least 3 characters and cannot contain spaces.");
-        }
-    }
-
-    if (password !== undefined) {
-        if (!password || password.length < 8 || !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-            errors.push("Password must be at least 8 characters and contain a special character.");
-        }
-    }
-
-    return errors;
-};
 
 // Get user info and send verification code
 const getUserInfo = async (req, res) => {
     try {
         const { fullName, email, password } = req.body;
-        const errors = validateInput({ fullName, email, password });
-
-        if (errors.length) {
-            return res.status(400).json({ message: "Validation error.", errors });
+        if (!fullName || !email || !password) {
+            return res.status(400).json({ message: "All fields are required" });
         }
 
+        // validate input 
+        const validationResult = InputVerifier(req.body);
+        if (validationResult !== true) {
+            return res.status(400).json({ message: "Invalid input", errors: validationResult });
+        }
+
+        // check email is in use 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: "Email is already in use." });
         }
 
+        // send email 
         const verificationCode = await sendEmail(email);
         console.log(verificationCode);
+        if (!verificationCode) {
+            return res.status(500).json({ message: "Failed to send verification code" });
+        }
+
         req.session.verificationCode = verificationCode;
-        req.session.userData = { fullName, email, password };
+        req.session.userData = req.body;
 
         return res.status(200).json({ message: "Verification code sent to your email. Please verify." });
     } catch (error) {
         console.error("Error in getUserInfo:", error);
-        return res.status(500).json({ statusCode : 200,message: "Error during registration.", error: error.message });
+        return res.status(500).json({ statusCode: 200, message: "Error during registration.", error: error.message });
     }
 };
 
@@ -71,6 +51,7 @@ const resendVerificationCode = async (req, res) => {
             return res.status(400).json({ message: "Session expired or user not found." });
         }
 
+        // resend email  
         const verificationCode = await sendEmail(userData.email);
         req.session.verificationCode = verificationCode;
 
@@ -94,14 +75,11 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ message: "Session expired. Please restart registration." });
         }
 
-        if (parseInt(code) !== verificationCode) {
-            return res.status(400).json({ message: "Invalid verification code." });
+        // check code is correct 
+        const isVerified = verifyEmail(code, verificationCode);
+        if (isVerified !== true) {
+            return res.status(400).json({ message: "Invalid verification code.", error: isVerified });
         }
-
-        // const isVerified = verifyEmail(code, verificationCode);
-        // if (!isVerified) {
-        //     return res.status(400).json({ message: "Invalid verification code." });
-        // }
 
         const { fullName, email, password } = userData;
 
@@ -120,6 +98,7 @@ const registerUser = async (req, res) => {
             password: hashedPassword,
         });
 
+        // create tokens 
         const refreshToken = jsonWebToken.sign(
             { id: newUser._id },
             process.env.REFRESH_TOKEN_SECRET,
@@ -132,11 +111,11 @@ const registerUser = async (req, res) => {
             { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
         );
 
+        // add token in db 
         newUser.refreshToken = refreshToken;
         await newUser.save();
 
         const checkUser = await User.findById(newUser._id).select("-password -refreshToken");
-
         req.session.verificationCode = null;
         req.session.userData = null;
 
@@ -190,7 +169,8 @@ const login = async (req, res) => {
         );
 
         // Update user's refresh token in the database
-        await User.findByIdAndUpdate(user._id, { refreshToken });
+        user.refreshToken = refreshToken;
+        await user.save();
 
         // Exclude sensitive fields before sending the response
         const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
@@ -199,11 +179,7 @@ const login = async (req, res) => {
         }
 
         // Return success response
-        return res.status(200).json({
-            message: "User logged in successfully.",
-            data: loggedInUser,
-            accessToken,
-        });
+        return res.status(200).json({ statusCode: 200, message: "User logged in successfully.", data: { loggedInUser, accessToken } });
     } catch (error) {
         console.error("Error logging in the user:", error);
         return res.status(500).json({
@@ -213,77 +189,7 @@ const login = async (req, res) => {
     }
 };
 
-// const login = async (req, res) => {
-//     try {
-//         const { email, userName, password } = req.body;
-//         const errors = validateInput({email,userName, password });
-
-//         if (errors.length) {
-//             return res.status(400).json({ message: "Validation error.", errors });
-//         }
-
-//         // check any filed is empty? 
-//         if ([email, userName, password].some((e) => e.trim() === "")) {
-//             return res.status(400).json({ message: "All fields required" })
-//         };
-
-//         const checkUser = await User.findOne({
-//             $and: [{ email }, { userName }],
-//         })
-
-//         if (!checkUser) {
-//             return res.status(400).json({ message: "email or userName is not Valid" })
-//         };
-
-//         // check password 
-//         const checkPass = await bcryptjs.compare(password, checkUser.password);
-//         if (!checkPass) {
-//             return res.status(400).json({ message: "Please enter Correct Password" })
-//         };
-
-//         // generate Tokens 
-//         const refresh_token = jsonWebToken.sign(
-//             {
-//                 id: checkUser._id,
-//             },
-//             process.env.REFRESH_TOKEN_SECRET,
-//             {
-//                 expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
-//             }
-//         );
-
-//         const access_token = jsonWebToken.sign(
-//             {
-//                 id: checkUser._id,
-//             },
-//             process.env.ACCESS_TOKEN_SECRET,
-//             {
-//                 expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
-//             }
-//         );
-
-//         await User.findByIdAndUpdate(checkUser._id, { refreshToken: refresh_token });
-
-//         const loginUser = await User.findById(checkUser._id).select("-password -refreshToken");
-//         if (!loginUser) {
-//             return res.status(500).json({ message: "Something went wrong to login the user" })
-//         }
-
-//         return res.status(200).json({
-//             statusCode: 200,
-//             data: loginUser,
-//             access_token: access_token,
-//             message: "User Login Success fully",
-//         })
-
-
-
-//     } catch (error) {
-//         console.log("Something went wrong to Login the user", error)
-//     }
-// }
-
-// logOut the User 
+// logOut the user
 const logOut = async (req, res) => {
     try {
         if (!req.user || !req.user._id) {
@@ -307,7 +213,6 @@ const logOut = async (req, res) => {
 // login is required  update avatar;
 const updateAvatar = async (req, res) => {
     try {
-        // get user id from req.user
         const userId = req.user._id;
 
         // check if avatar file is provided
@@ -360,12 +265,15 @@ const editProfile = async (req, res) => {
             return res.status(401).json({ message: "Unauthorized user" });
         }
 
-        const { email,fullName, userName } = req.body;
+        const { email, fullName, userName } = req.body;
+        if(!email || !fullName || !userName){
+            return res.status(400).json({ message: "All fields required"})
+        }
 
-        const errors = validateInput({ fullName, email,userName });
-
-        if (errors.length) {
-            return res.status(400).json({ message: "Validation error.", errors });
+        // validate input 
+        const validationResult = InputVerifier(req.body);
+        if (validationResult !== true) {
+            return res.status(400).json({ message: "Invalid input", errors: validationResult });
         }
 
         // Check if email or username is already in use by another user, excluding the current user
@@ -385,29 +293,32 @@ const editProfile = async (req, res) => {
 
         // Check if email has changed
         if (currentUser.email !== email) {
+            // send code to emial 
             const verificationCode = await sendEmail(email);
-            req.session.verificationCode = verificationCode;
-        } else {
-            const updatedUser = await User.findByIdAndUpdate(
-                userId,
-                {
-                    fullName,
-                    email,
-                    userName,
-                },
-                { new: true }
-            );
-
-            if (!updatedUser) {
-                return res.status(500).json({ message: "Failed to update profile. Please try again." });
+            console.log(verificationCode)
+            if (!verificationCode) {
+                return res.status(500).json({ message: "Failed to send verification code" });
             }
+            req.session.verificationCode = verificationCode;
+            req.session.userData = req.body;
+            return res.status(200).json({ message: "Verification code sent to your email. Please verify." });
+        }
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            {
+                fullName,
+                email,
+                userName,
+            },
+            { new: true }
+        );
 
-            return res.status(200).json({ message: "Profile updated successfully", data: updatedUser });
+        if (!updatedUser) {
+            return res.status(500).json({ message: "Failed to update profile. Please try again." });
         }
 
-        // Store user data in session middleware
-        req.session.userData = { fullName, email, userName};
-        return res.status(200).json({ message: "Verification code sent to your email. Please verify." });
+        return res.status(200).json({ message: "Profile updated successfully", data: updatedUser });
+
     } catch (error) {
         return res.status(500).json({ message: "An error occurred while updating the profile.", error: error.message });
     }
@@ -431,37 +342,33 @@ const updateProfile = async (req, res) => {
         }
 
         const { verificationCode, userData } = req.session;
-        if (verificationCode !== null) {
-            const isVerified = verifyEmail(code, verificationCode);
-            if (!userData || !isVerified) {
-                return res.status(400).json({ message: "User data not found in session or verification incomplete. Please complete the edit profile process again." });
-            }
-
-            const { fullName, email,userName } = userData;
-
-            // Update the user profile
-            const updatedUser = await User.findByIdAndUpdate(
-                userId,
-                {
-                    fullName,
-                    email,
-                    userName,
-                },
-                { new: true }
-            );
-
-            if (!updatedUser) {
-                return res.status(500).json({ message: "Failed to update profile. Please try again." });
-            }
-
-            // Clear session data after update
-            req.session.verificationCode = null;
-            req.session.userData = null;
-            req.session.isVerified = null;
-
-            return res.status(200).json({ message: "Profile updated successfully", data: updatedUser });
+        const isVerified = verifyEmail(code, verificationCode);
+        if (!userData || !isVerified) {
+            return res.status(400).json({ message: "User data not found in session or verification incomplete. Please complete the edit profile process again." });
         }
 
+        const { fullName, email, userName } = userData;
+
+        // Update the user profile
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            {
+                fullName,
+                email,
+                userName,
+            },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(500).json({ message: "Failed to update profile. Please try again." });
+        }
+
+        // Clear session data after update
+        req.session.verificationCode = null;
+        req.session.userData = null;
+
+        return res.status(200).json({ message: "Profile updated successfully", data: updatedUser });
     } catch (error) {
         console.error("Error in updateProfile:", error);
         return res.status(500).json({ message: "An error occurred while updating the profile.", error: error.message });

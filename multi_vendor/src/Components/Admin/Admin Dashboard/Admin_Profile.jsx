@@ -5,7 +5,7 @@ import 'react-phone-number-input/style.css'
 import { FaCamera } from 'react-icons/fa'
 import metadata from 'libphonenumber-js/metadata.min.json'
 
-const Admin_Profile = ()=>{
+const Admin_Profile = () => {
   const [avatar, setAvatar] = useState(null)
   const [selectedCountry, setSelectedCountry] = useState('')
   const [selectedState, setSelectedState] = useState('')
@@ -37,7 +37,7 @@ const Admin_Profile = ()=>{
   }
 
   const supportedCountries = useMemo(() => {
-    return Country.getAllCountries().filter(country => 
+    return Country.getAllCountries().filter(country =>
       metadata.countries[country.isoCode] !== undefined
     )
   }, [])
@@ -70,6 +70,18 @@ const Admin_Profile = ()=>{
             </div>
 
             <form className="space-y-6">
+              <div>
+                <label htmlFor="shopName" className="block text-sm font-medium text-gray-700">
+                  email
+                </label>
+                <input
+                  type="text"
+                  id="email"
+                  name="email"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+              </div>
+
               <div>
                 <label htmlFor="shopName" className="block text-sm font-medium text-gray-700">
                   Shop Name
@@ -162,6 +174,18 @@ const Admin_Profile = ()=>{
                   type="text"
                   id="zipCode"
                   name="zipCode"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700">
+                  Home Adress
+                </label>
+                <input
+                  type="text"
+                  id="adress"
+                  name="adress"
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
               </div>

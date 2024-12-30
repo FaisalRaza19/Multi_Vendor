@@ -1,54 +1,35 @@
 import { fileUploadOnCloudinary } from "../../utils/fileUploadAndRemoveFromCloudinary.js";
 import { removeFileFromCloudinary } from "../../utils/fileUploadAndRemoveFromCloudinary.js";
 import { Shops } from "../../Models/Admin.model.js";
+import { ProductVerifier } from "../../utils/InputVerifier.js"
 
 const addProduct = async (req, res) => {
     try {
-        const userId = req.user?._id;
+        const userId = req.admin._id;
         if (!userId) {
             return res.status(400).json({ message: "User ID not found." });
         }
 
-        const { productTitle, actualPrice, giveOffer, offerPercent, productDescription } = req.body;
+        const { productTitle, actualPrice, giveOffer, offerPercent, productDescription, stock } = req.body;
+        const productImage = req.files?.productImage?.[0]?.path;
 
-        // Check if all required fields are provided and non-empty
-        if ([productTitle, actualPrice, giveOffer, productDescription].some((e) => e?.trim() === "")) {
-            return res.status(400).json({ message: "All fields are required." });
+        if (!productTitle || !actualPrice || !giveOffer || !offerPercent || !productDescription || !stock) {
+            return res.status(400).json({ message: "All fields are required" })
         }
 
-        // Validate product title length
-        if (productTitle.length < 5 || productTitle.length > 50) {
-            return res.status(400).json({ message: "Product title must be between 5 and 50 characters." });
-        }
-
-        // Validate product description length
-        if (productDescription.length < 50 || productDescription.length > 750) {
-            return res.status(400).json({ message: "Product description must be between 50 and 750 characters." });
-        }
-
-        // Validate product price
-        if (actualPrice <= 0) {
-            return res.status(400).json({ message: "Product price must be greater than 0." });
+        // validate input
+        const validateProduct = ProductVerifier(req.body,productImage);
+        if (!validateProduct) {
+            return res.status(400).json({ message: "Invalid input", errors: validateProduct });
         }
 
         let offerPrice = actualPrice;
 
         // Handle offer logic
         if (giveOffer === 'give Offer') {
-            // Ensure offerPercent is provided and a valid number between 3 and 90
-            if (!offerPercent || isNaN(offerPercent) || offerPercent < 3 || offerPercent > 90) {
-                return res.status(400).json({ message: "Offer percent must be between 3 and 90." });
-            }
-
             // Calculate the offer price
             const discount = (actualPrice * offerPercent) / 100;
             offerPrice = actualPrice - discount;
-        }
-
-        // Validate product image
-        const productImage = req.files?.productImage?.[0]?.path;
-        if (!productImage) {
-            return res.status(400).json({ message: "Product image is required." });
         }
 
         // Upload the product image to Cloudinary
@@ -59,7 +40,7 @@ const addProduct = async (req, res) => {
         }
 
         // Find the shop related to the user
-        const shop = await Shops.findOne({ "personalInfo.userId": userId }).select("-bankDetails -phoneNumber -personalInfo");
+        const shop = await Shops.findOne(userId).select("-password -refreshToken");
         if (!shop) {
             return res.status(404).json({ message: "Shop not found." });
         }
