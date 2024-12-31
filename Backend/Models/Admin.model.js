@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import { BankAccountSchema } from "./bank.model.js";
 import { addProduct } from "./addProductModel.js";
+import {admin_events} from "./event.model.js"
 import { orderSchema } from "./Orders.model.js"
 
 const adminSchema = new mongoose.Schema(
@@ -72,6 +73,7 @@ const adminSchema = new mongoose.Schema(
             type: BankAccountSchema,
         },
         products: [addProduct],
+        events : [admin_events],
         Orders: [orderSchema],
         completedOrder: [
             {

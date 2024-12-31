@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { productReview } from "./review.model.js"
 
-export const addProduct = new mongoose.Schema(
+export const admin_events = new mongoose.Schema(
     {
         productTitle: {
             type: String,
@@ -13,10 +13,6 @@ export const addProduct = new mongoose.Schema(
             type: Number,
             required: true,
             index: true,
-        },
-        giveOffer: {
-            type: String,
-            required: true,
         },
         offerPercent: {
             type: String,
@@ -45,6 +41,14 @@ export const addProduct = new mongoose.Schema(
         stock: {
             type: String,
             required: true,
+        },
+        eventStart: {
+            type: Date,
+            required: true
+        },
+        eventEnd: {
+            type: Date,
+            required: true
         },
         productReviews: [productReview]
     },

@@ -7,15 +7,15 @@ cloudinary.config({
     api_secret: "YGm49A7doHVOqM0YYL-P2lgkcDI",
 });
 
-export const fileUploadOnCloudinary = async (filePath,folder) => {
+export const fileUploadOnCloudinary = async (filePath, folder) => {
     try {
         if (!filePath) return null;
         const uploadFile = await cloudinary.uploader.upload(filePath, {
             folder: folder,
-            resource_type: 'auto',
+            resource_type : 'image',
         });
 
-        fs.unlinkSync(filePath)
+        fs.unlinkSync(filePath);
         return uploadFile;
     } catch (error) {
         console.error("Error uploading file to Cloudinary:", error);

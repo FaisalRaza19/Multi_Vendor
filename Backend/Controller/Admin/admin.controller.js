@@ -153,7 +153,7 @@ const verifyAndCreate = async (req, res) => {
 const shopLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
-        if (!req.body) {
+        if (!email || !password) {
             return res.status(400).json({ message: "all fields are required" })
         }
         // validate input
@@ -163,7 +163,7 @@ const shopLogin = async (req, res) => {
         };
 
         // find the user 
-        const user = await Shops.findOne({ "personalInfo.email": email });
+        const user = await Shops.findOne({"personalInfo.email" : email});
         if (!user) {
             return res.status(400).json({ messages: "User did not found" });
         }
