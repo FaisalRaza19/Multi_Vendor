@@ -1,113 +1,84 @@
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import { Country, State, City } from 'country-state-city';
 
-export const InputVerifier = ({ fullName, email, password, userName, shopName, shopDescription, phoneNumber, country, state, city, homeAddress, zipCode, }) => {
+export const InputVerifier = (data) => {
     const errors = {};
+    const { fullName, email, password, userName, shopName, shopDescription, phoneNumber, country, state, city, homeAddress, zipCode, } = data;
 
     // Verify full name
-    if (fullName !== undefined && (fullName.trim() === '' || fullName.length < 3)) {
-        errors.fullName = 'Full name is required and must be at least 3 characters.';
+    if (fullName !== undefined) {
+        if (!fullName || fullName.trim() === '' || fullName.length < 3) {
+            errors.fullName = 'Full name is required and must be at least 3 characters.';
+        }
     }
 
     // Verify email
     if (email !== undefined) {
-        const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        if (!emailRegex.test(email)) {
+        if (!email || !/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
             errors.email = 'Invalid email format.';
         }
     }
 
     // Verify password
-    if (password !== undefined && password.length < 8) {
-        errors.password = 'Password must be at least 8 characters.';
+    if (password !== undefined) {
+        if (!password || password.length < 8) {
+            errors.password = 'Password must be at least 8 characters.';
+        }
     }
 
     // Verify username
-    if (userName !== undefined && (userName.trim() === '' || userName.length < 8)) {
-        errors.userName = 'Username is required and must be at least 8 characters.';
+    if (userName !== undefined) {
+        if (!userName || userName.trim() === '' || userName.length < 8) {
+            errors.userName = 'Username is required and must be at least 8 characters.';
+        }
     }
 
     // Verify shop name
-    if (shopName !== undefined && (shopName.trim() === '' || shopName.length < 3)) {
-        errors.shopName = 'Shop name is required and must be at least 3 characters.';
+    if (shopName !== undefined) {
+        if (!shopName || shopName.trim() === '' || shopName.length < 3) {
+            errors.shopName = 'Shop name is required and must be at least 3 characters.';
+        }
     }
 
     // Verify shop description
-    if (shopDescription !== undefined && shopDescription.length < 20) {
-        errors.shopDescription = 'Shop description must be at least 20 characters.';
-    }
-
-    // Verify home address
-    if (homeAddress !== undefined && (homeAddress.trim() === '' || homeAddress.length < 8)) {
-        errors.homeAddress = 'Home address is required and must be at least 8 characters.';
+    if (shopDescription !== undefined) {
+        if (!shopDescription || shopDescription.length < 20) {
+            errors.shopDescription = 'Shop description must be at least 20 characters.';
+        }
     }
 
     // Verify phone number
-    if (phoneNumber !== undefined && !isValidPhoneNumber(phoneNumber)) {
-        errors.phoneNumber = 'Invalid phone number.';
+    if (phoneNumber !== undefined) {
+        if (!phoneNumber || !isValidPhoneNumber(phoneNumber)) {
+            errors.phoneNumber = 'Invalid phone number.';
+        }
     }
 
-    // Verify country
+    // Verify address details
+    if (homeAddress !== undefined) {
+        if (!homeAddress || homeAddress.trim() === '' || homeAddress.length < 8) {
+            errors.homeAddress = 'Home address is required and must be at least 8 characters.';
+        }
+    }
+
     if (country !== undefined) {
-        const validCountry = Country.getAllCountries().find(
-            (c) => c.name.toLowerCase() === country.toLowerCase()
-        );
-        if (!validCountry) {
+        if (!country || !Country.getAllCountries().find((c) => c.name.toLowerCase() === country.toLowerCase())) {
             errors.country = 'Invalid country.';
+        } else if (!state || !State.getStatesOfCountry(Country.getAllCountries().find((c) => c.name.toLowerCase() === country.toLowerCase()).isoCode)
+            .find((s) => s.name.toLowerCase() === state.toLowerCase())) {
+            errors.state = `Invalid state for the country ${country}.`;
+        } else if (!city || !City.getCitiesOfState(
+            Country.getAllCountries().find((c) => c.name.toLowerCase() === country.toLowerCase()).isoCode,
+            State.getStatesOfCountry(Country.getAllCountries().find((c) => c.name.toLowerCase() === country.toLowerCase()).isoCode)
+                .find((s) => s.name.toLowerCase() === state.toLowerCase()).isoCode)
+            .find((ci) => ci.name.toLowerCase() === city.toLowerCase())) {
+            errors.city = `Invalid city for the state ${state}.`;
         }
     }
 
-    // Verify state
-    if (state !== undefined) {
-        if (country) {
-            const validCountry = Country.getAllCountries().find(
-                (c) => c.name.toLowerCase() === country.toLowerCase()
-            );
-            if (validCountry) {
-                const validState = State.getStatesOfCountry(validCountry.isoCode).find(
-                    (s) => s.name.toLowerCase() === state.toLowerCase()
-                );
-                if (!validState) {
-                    errors.state = `Invalid state for the country ${country}.`;
-                }
-            } else {
-                errors.state = 'State cannot be verified without a valid country.';
-            }
-        } else {
-            errors.state = 'Country is required to verify state.';
-        }
-    }
-
-    // Verify city
-    if (city !== undefined) {
-        if (country && state) {
-            const validCountry = Country.getAllCountries().find(
-                (c) => c.name.toLowerCase() === country.toLowerCase()
-            );
-            const validState = State.getStatesOfCountry(validCountry.isoCode).find(
-                (s) => s.name.toLowerCase() === state.toLowerCase()
-            );
-            if (validState) {
-                const validCity = City.getCitiesOfState(validCountry.isoCode, validState.isoCode).find(
-                    (ci) => ci.name.toLowerCase() === city.toLowerCase()
-                );
-                if (!validCity) {
-                    errors.city = `Invalid city for the state ${state}.`;
-                }
-            } else {
-                errors.city = 'City cannot be verified without a valid state.';
-            }
-        } else {
-            errors.city = 'Country and state are required to verify city.';
-        }
-    }
-
-    // Verify zip code
     if (zipCode !== undefined) {
-        if (zipCode.trim() === '') {
-            errors.zipCode = 'Zip code is required.';
-        } else if (!/^[0-9]+$/.test(zipCode)) {
-            errors.zipCode = 'Invalid zip code format. Only numeric values are allowed.';
+        if (!zipCode || zipCode.trim() === '' || !/^[0-9]+$/.test(zipCode)) {
+            errors.zipCode = 'Zip code is required and must be numeric.';
         }
     }
 
@@ -158,7 +129,7 @@ export const ProductVerifier = ({ productTitle, actualPrice, giveOffer, offerPer
         if (isNaN(start) || isNaN(end)) {
             errors.dateRange = 'Invalid start date or end date.';
         } else {
-            const diffInDays = (end - start) / (1000 * 60 * 60 * 24); 
+            const diffInDays = (end - start) / (1000 * 60 * 60 * 24);
             if (diffInDays > 3) {
                 errors.dateRange = 'The difference between start date and end date must be exactly 3 days.';
             }

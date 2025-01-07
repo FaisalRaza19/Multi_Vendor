@@ -10,11 +10,11 @@ import Admin_Profile from './Admin Dashboard/Admin_Profile.jsx'
 import Admin_AddProduct from './Admin Dashboard/Admin_AddProduct.jsx'
 import Admin_CreateEvent from './Admin Dashboard/Admin_CreateEvent.jsx'
 
-const Admin = () => {
+const Admin = ({isAuth}) => {
     return (
         <>
             <div className="min-h-screen bg-gray-50">
-                <Admin_Navbar />
+                <Admin_Navbar isAuth={isAuth}/>
                 <div className='relative flex'>
                     <Admin_Sidebar />
                     <main className="flex-1 lg:ml-72">

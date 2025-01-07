@@ -18,7 +18,7 @@ const Index = ({isAuth}) => {
       <div className="flex-1 p-6">
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard/profile" />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile" element={<Profile/>} />
           <Route path="/orders" element={<UserOrders />} />
           <Route path="/refunds" element={<Refund />} />
           <Route path="/inbox/*" element={<ChatPage />} />

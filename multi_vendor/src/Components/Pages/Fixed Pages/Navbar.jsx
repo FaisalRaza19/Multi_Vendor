@@ -13,7 +13,7 @@ import {
 } from "react-icons/md";
 import { ContextApi } from "../../../Context/Context.jsx";
 
-const Navbar = ({ path }) => {
+const Navbar = ({ path, shopPath }) => {
     const { FetchUser } = useContext(ContextApi);
     const [isOpen, setIsOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,8 +26,7 @@ const Navbar = ({ path }) => {
     const fetchUser = async () => {
         try {
             const data = await FetchUser();
-            console.log(data)
-            setImagePreview(data.avatar?.url || "/public/pic.jpg");
+            setImagePreview(data.avatar?.url || "public/pic.jpg");
         } catch (err) {
             console.error("Error fetching user data:", err);
             setError("Failed to load user data.");
@@ -64,10 +63,10 @@ const Navbar = ({ path }) => {
                         </div>
                         <div className="flex items-center space-x-4">
                             <Link
-                                to="/Shop"
+                                to={shopPath}
                                 className="hidden md:flex bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors items-center space-x-2"
                             >
-                                <span>Become Seller</span>
+                                <span>{shopPath == "/Shop-login" ? "Become Seller" : "Go to Dashboard"}</span>
                                 <MdArrowForward size={16} />
                             </Link>
                             <button
@@ -141,7 +140,7 @@ const Navbar = ({ path }) => {
                                     </button>
                                     <Link to={path} className="border-gray-50 rounded-full overflow-hidden">
                                         <img
-                                            src={imagePreview}
+                                            src={imagePreview || "/public/pic.jpg"}
                                             alt=""
                                             className="w-10 h-10"
                                         />

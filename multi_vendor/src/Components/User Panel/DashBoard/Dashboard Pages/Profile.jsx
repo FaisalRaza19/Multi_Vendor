@@ -1,9 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import {
-    AiOutlineCamera,
-    AiOutlineClose,
-    AiOutlineLoading3Quarters 
-} from "react-icons/ai";
+import {AiOutlineCamera,AiOutlineClose,AiOutlineLoading3Quarters} from "react-icons/ai";
 import { ContextApi } from "../../../../Context/Context";
 import { useNavigate } from "react-router";
 
@@ -18,7 +14,7 @@ const Profile = () => {
     const navigate = useNavigate();
 
     // Fetch user data
-    const fetchUserData = async () => {
+    const fetchUserData = async() => {
         try {
             const data = await FetchUser();
             setUser(data);
@@ -208,3 +204,5 @@ const Profile = () => {
 };
 
 export default Profile;
+
+

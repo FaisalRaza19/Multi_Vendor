@@ -53,12 +53,12 @@ const RegisterShop = async (req, res) => {
 // resend code on email 
 const resendVerificationCode = async (req, res) => {
     try {
-        const { admin_data } = req.session;
-        if (!admin_data || !admin_data.email) {
+        const { adminData } = req.session;
+        if (!adminData || !adminData.email) {
             return res.status(400).json({ message: "Session expired or user not found." });
         }
 
-        const verificationCode = await sendEmail(admin_data.email);
+        const verificationCode = await sendEmail(adminData.email);
         req.session.code = verificationCode;
 
         return res.status(200).json({ message: "New verification code sent to your email." });
@@ -159,11 +159,11 @@ const shopLogin = async (req, res) => {
         // validate input
         const verifyInput = InputVerifier(req.body)
         if (verifyInput !== true) {
-            return res.status(400).json({ messages: "Invalid input", error: validateInput })
+            return res.status(400).json({ messages: "Invalid input", error: verifyInput })
         };
 
         // find the user 
-        const user = await Shops.findOne({"personalInfo.email" : email});
+        const user = await Shops.findOne({ "personalInfo.email": email });
         if (!user) {
             return res.status(400).json({ messages: "User did not found" });
         }
@@ -198,6 +198,7 @@ const shopLogin = async (req, res) => {
 
         return res.status(200).json({ statusCode: 200, data: { userLogin, accessToken }, message: "user login into the shop Successfully" });
     } catch (error) {
+        console.error("Error during shop login:", error);
         return res.status(500).json({ message: "internal server error to login the shop", error: error })
     }
 }
@@ -314,7 +315,7 @@ const editShop = async (req, res) => {
         }
 
         // find the shop 
-        const shop = await Shops.findOne(userId).select("-refreshToken -password")
+        const shop = await Shops.findById(userId).select("-refreshToken -password")
         if (!shop) {
             return res.status(404).json({ message: "User does not exist" });
         }
@@ -330,7 +331,7 @@ const editShop = async (req, res) => {
 
             req.session.code = otpCode;
             req.session.adminData = req.body
-            return res.status(200).json({ statusCode: 200,message: "OTP send to your new email please verify it." })
+            return res.status(200).json({ statusCode: 200, message: "OTP send to your new email please verify it." })
         }
 
         const editShop = await shop.updateOne({
@@ -406,11 +407,27 @@ const verifyAndEdit = async (req, res) => {
         // clear session 
         req.session.code = null;
         req.session.adminData = null;
-        
+
         return res.status(200).json({ statusCode: 200, data: { editShop }, message: "Shop edit Successfully" })
     } catch (error) {
         return res.status(500).json({ message: "internal server error to verify and edit the shop", error: error })
     }
 }
 
-export { RegisterShop, resendVerificationCode, verifyAndCreate, shopLogin, updateShopLogo, shopLogOut, getShop,editShop,verifyAndEdit}
+// verify token
+const verifyJWT = async (req, res) => {
+    try {
+        const userId = req.admin._id;
+        if (!userId) {
+            return res.status(400).json({ message: "User did not found" })
+        };
+        return res.status(200).json({ status: 200, message: "token is valid" })
+    } catch (error) {
+        return res.status(500).json({ message: "internal server error to verify and edit the shop", error: error })
+    }
+}
+
+export {
+    RegisterShop, resendVerificationCode, verifyAndCreate, shopLogin, updateShopLogo, shopLogOut, getShop,
+    editShop, verifyAndEdit, verifyJWT
+}

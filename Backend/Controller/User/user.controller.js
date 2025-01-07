@@ -266,8 +266,8 @@ const editProfile = async (req, res) => {
         }
 
         const { email, fullName, userName } = req.body;
-        if(!email || !fullName || !userName){
-            return res.status(400).json({ message: "All fields required"})
+        if (!email || !fullName || !userName) {
+            return res.status(400).json({ message: "All fields required" })
         }
 
         // validate input 
@@ -392,4 +392,19 @@ const getUser = async (req, res) => {
     }
 }
 
-export { getUserInfo, resendVerificationCode, editProfile, registerUser, updateProfile, login, logOut, getUser, updateAvatar, };
+const userVerifyJWT = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        if (!userId) {
+            return res.status(400).json({ message: "User did not found" })
+        };
+        return res.status(200).json({ status: 200, message: "token is valid" })
+    } catch (error) {
+        return res.status(500).json({ message: "internal server error to verify and edit the shop", error: error })
+    }
+}
+
+export {
+    getUserInfo, resendVerificationCode, editProfile, registerUser, updateProfile, login, logOut,
+    getUser, updateAvatar, userVerifyJWT
+};

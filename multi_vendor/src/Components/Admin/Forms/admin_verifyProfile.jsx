@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { ContextApi } from '../../../Context/Context';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 
-const VerifyEmail = ({isAuth}) => {
-  const {VerifyProfile,ResendCode } = useContext(ContextApi);
+const admin_VerifyProfile = () => {
+  const {verifyShopProfile,adminResendCode } = useContext(ContextApi);
   const [otp, setOtp] = useState('');
   const [message, setMessage] = useState({ text: '', type: '' });
   const [isResending, setIsResending] = useState(false);
@@ -33,7 +33,7 @@ const VerifyEmail = ({isAuth}) => {
     }
     setLoading(true);
     try {
-      await VerifyProfile({ otp, navigate,isAuth});
+      await verifyShopProfile({ otp, navigate});
       setLoading(true);
       setMessage({ text: 'OTP verified successfully!', type: 'success' });
     } catch (error) {
@@ -61,7 +61,7 @@ const VerifyEmail = ({isAuth}) => {
       });
     }, 1000);
     try {
-      await ResendCode();
+      await adminResendCode();
     } catch (error) {
       setMessage({ text: 'Failed to resend OTP. Please try again.', type: 'error' });
     }
@@ -69,7 +69,7 @@ const VerifyEmail = ({isAuth}) => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col py-8 sm:px-6 lg:px-8">
-      <div className="flex ml-10 cursor-pointer" onClick={() => navigate("/dashboard")}>
+      <div className="flex ml-10 cursor-pointer" onClick={() => navigate("/Shop/dashboard")}>
         <FaCircleArrowLeft size={30} />
       </div>
       <div className="flex justify-center items-center mt-32">
@@ -123,4 +123,4 @@ const VerifyEmail = ({isAuth}) => {
   )
 }
 
-export default VerifyEmail;
+export default admin_VerifyProfile;
