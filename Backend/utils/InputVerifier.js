@@ -99,8 +99,10 @@ export const ProductVerifier = ({ productTitle, actualPrice, giveOffer, offerPer
     }
 
     // Verify offer percent
-    if (giveOffer && offerPercent !== undefined && offerPercent < 2) {
+    if (giveOffer && offerPercent !== undefined && offerPercent < 2 ) {
         errors.offerPercent = 'Offer percent must be at least 2%.';
+    } else if (giveOffer && offerPercent > 100) {
+        errors.offerPercent = 'Offer percent cannot be more than 100%.';
     }
 
     // Verify product description
@@ -110,7 +112,7 @@ export const ProductVerifier = ({ productTitle, actualPrice, giveOffer, offerPer
 
     // Verify stock
     if (stock !== undefined) {
-        const validStockOptions = ['in stock', 'limited stock', 'out of stock'];
+        const validStockOptions = ['In Stock', 'Limited Stock', 'Out of Stock'];
         if (!validStockOptions.includes(stock)) {
             errors.stock = "Stock must be one of 'in stock', 'limited stock', or 'out of stock'.";
         }

@@ -28,10 +28,6 @@ const Admin_Navbar = ({isAuth}) => {
         }
     }
 
-
-
-
-
     useEffect(() => {
         fetchShop();
     }, []);
@@ -75,7 +71,7 @@ const Admin_Navbar = ({isAuth}) => {
                     </button>
                     {dropdownOpen && (
                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md overflow-hidden shadow-xl z-10">
-                            <Link to="/profile" className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center" onClick={() => setDropdownOpen(false)}>
+                            <Link to="/Shop/settings" className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center" onClick={() => setDropdownOpen(false)}>
                                 <FiUser className="mr-2" />
                                 Edit Profile
                             </Link>

@@ -1,18 +1,21 @@
-import React, { useState } from "react";
-import { FaUpload, FaCheckCircle, FaTag, FaCalendarAlt } from "react-icons/fa";
+import React, { useContext, useState } from "react";
+import { FaUpload, FaCheckCircle, FaTag, FaCalendarAlt,FaTrash } from "react-icons/fa";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { ContextApi } from "../../../Context/Context.jsx"
 
 const Admin_CreateEvent = () => {
+    const { addEvents } = useContext(ContextApi);
     const [formData, setFormData] = useState({
-        title: "",
-        description: "",
+        productTitle: "",
+        productDescription: "",
         actualPrice: "",
-        offer: false,
-        offerPercent: 0,
-        inStock: "In Stock",
-        image: null,
-        eventStartDate: "",
-        eventEndDate: "",
+        offerPercent: "",
+        stock: "",
+        productImages: [],
+        startDate: "",
+        endDate: "",
     });
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -23,32 +26,51 @@ const Admin_CreateEvent = () => {
     };
 
     const handleImageUpload = (e) => {
-        setFormData({ ...formData, image: e.target.files[0] });
+        const files = Array.from(e.target.files);
+        if (formData.productImages.length + files.length > 4) {
+            alert("You can only upload up to 4 images.");
+            return;
+        }
+        setFormData((prev) => ({
+            ...prev,
+            productImages: [...prev.productImages, ...files],
+        }));
+    };
+
+    const handleRemoveImage = (index) => {
+        setFormData((prev) => ({
+            ...prev,
+            productImages: prev.productImages.filter((_, i) => i !== index),
+        }));
     };
 
     const calculateDiscountedPrice = () => {
         const { actualPrice, offerPercent } = formData;
-        return actualPrice - (actualPrice * offerPercent) / 100;
+        const value = actualPrice - (actualPrice * offerPercent) / 100;
+        return value
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Product Details:", {
-            ...formData,
-            discountedPrice: formData.offer ? calculateDiscountedPrice() : null,
-        });
-        alert("Product Added Successfully!");
-        setFormData({
-            title: "",
-            description: "",
-            actualPrice: "",
-            offer: false,
-            offerPercent: 0,
-            inStock: "In Stock",
-            image: null,
-            eventStartDate: "",
-            eventEndDate: "",
-        });
+        setLoading(true);
+        try {
+            const productData = formData;
+            await addEvents({ productData })
+        } catch (error) {
+            console.log("Error during add event", error)
+        } finally {
+            setFormData({
+                productTitle: "",
+                productDescription: "",
+                actualPrice: "",
+                offerPercent: 0,
+                stock: "",
+                productImages: [],
+                startDate: "",
+                endDate: "",
+            });
+            setLoading(false);
+        }
     };
 
     return (
@@ -63,8 +85,8 @@ const Admin_CreateEvent = () => {
                     <label className="block font-medium mb-2">Product Title</label>
                     <input
                         type="text"
-                        name="title"
-                        value={formData.title}
+                        name="productTitle"
+                        value={formData.productTitle}
                         onChange={handleChange}
                         className="w-full p-3 rounded bg-white text-gray-800 shadow focus:outline-none focus:ring focus:ring-black"
                         placeholder="Enter product title"
@@ -76,10 +98,10 @@ const Admin_CreateEvent = () => {
                 <div>
                     <label className="block font-medium mb-2">Description</label>
                     <textarea
-                        name="description"
-                        value={formData.description}
+                        name="productDescription"
+                        value={formData.productDescription}
                         onChange={handleChange}
-                        rows="3"
+                        rows="6"
                         className="w-full p-3 rounded bg-white text-gray-800 shadow focus:outline-none focus:ring focus:ring-black"
                         placeholder="Enter product description"
                         required
@@ -106,9 +128,9 @@ const Admin_CreateEvent = () => {
                     <div className="flex items-center space-x-2">
                         <FaCalendarAlt />
                         <input
-                            type="date"
-                            name="eventStartDate"
-                            value={formData.eventStartDate}
+                            type="datetime-local"
+                            name="startDate"
+                            value={formData.startDate}
                             onChange={handleChange}
                             className="w-full p-3 rounded bg-white text-gray-800 shadow focus:outline-none focus:ring focus:ring-black"
                             required
@@ -122,9 +144,9 @@ const Admin_CreateEvent = () => {
                     <div className="flex items-center space-x-2">
                         <FaCalendarAlt />
                         <input
-                            type="date"
-                            name="eventEndDate"
-                            value={formData.eventEndDate}
+                            type="datetime-local"
+                            name="endDate"
+                            value={formData.endDate}
                             onChange={handleChange}
                             className="w-full p-3 rounded bg-white text-gray-800 shadow focus:outline-none focus:ring focus:ring-black"
                             required
@@ -132,43 +154,30 @@ const Admin_CreateEvent = () => {
                     </div>
                 </div>
 
-                {/* Offer Checkbox */}
-                <div className="flex items-center">
-                    <input
-                        type="checkbox"
-                        name="offer"
-                        checked={formData.offer}
-                        onChange={handleChange}
-                        className="mr-2"
-                    />
-                    <label className="font-medium">Give Offer</label>
-                </div>
 
-                {/* Offer Percentage */}
-                {formData.offer && (
-                    <div>
-                        <label className="block font-medium mb-2">Offer Percentage (%)</label>
-                        <input
-                            type="number"
-                            name="offerPercent"
-                            value={formData.offerPercent}
-                            onChange={handleChange}
-                            className="w-full p-3 rounded bg-white text-gray-800 shadow focus:outline-none focus:ring focus:ring-yellow-400"
-                            placeholder="Enter offer percentage"
-                            required
-                        />
-                    </div>
-                )}
+                <div>
+                    <label className="block font-medium mb-2">Offer Percentage (%)</label>
+                    <input
+                        type="number"
+                        name="offerPercent"
+                        value={formData.offerPercent}
+                        onChange={handleChange}
+                        className="w-full p-3 rounded bg-white text-gray-800 shadow focus:outline-none focus:ring focus:ring-yellow-400"
+                        placeholder="Enter offer percentage"
+                        required
+                    />
+                </div>
 
                 {/* Stock Status Dropdown */}
                 <div>
                     <label className="block font-medium mb-2">Stock Status</label>
                     <select
-                        name="inStock"
-                        value={formData.inStock}
+                        name="stock"
+                        value={formData.stock}
                         onChange={handleChange}
                         className="w-full p-3 rounded bg-white text-gray-800 shadow focus:outline-none focus:ring focus:ring-black"
                     >
+                        <option value="">Chose Stock</option>
                         <option value="In Stock">In Stock</option>
                         <option value="Out of Stock">Out of Stock</option>
                         <option value="Limited Stock">Limited Stock</option>
@@ -176,48 +185,67 @@ const Admin_CreateEvent = () => {
                 </div>
 
                 {/* Product Image Upload */}
-                <div>
-                    <label className="block font-medium mb-2">Product Image</label>
+                <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2 mb-2">
+                        {formData.productImages.map((file, index) => (
+                            <div key={index} className="relative group">
+                                <img
+                                    src={URL.createObjectURL(file)}
+                                    alt={`Product ${index + 1}`}
+                                    className="w-20 h-20 object-cover rounded"
+                                />
+                                <button
+                                    type="button"
+                                    className="absolute bg-white top-0 right-0 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => handleRemoveImage(index)}
+                                >
+                                    <FaTrash size={17} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
                     <div className="flex items-center space-x-4">
                         <input
+                            id="productImage"
                             type="file"
-                            accept="image/*"
                             onChange={handleImageUpload}
                             className="hidden"
-                            id="productImage"
+                            multiple
+                            accept="image/*"
                         />
                         <label
                             htmlFor="productImage"
-                            className="cursor-pointer p-3 bg-yellow-500 rounded shadow hover:bg-yellow-600 flex items-center text-gray-800"
+                            className={`cursor-pointer p-3 rounded shadow flex items-center ${formData.productImages.length >= 4
+                                ? "bg-gray-400 cursor-not-allowed text-gray-500"
+                                : "bg-yellow-500 hover:bg-yellow-600 text-gray-800"
+                                }`}
                         >
                             <FaUpload className="mr-2" />
-                            Upload Image
+                            {formData.productImages.length >= 4 ? "Limit Reached" : "Upload Image"}
                         </label>
-                        {formData.image && (
-                            <span className="text-sm text-gray-200">
-                                {formData.image.name}
-                            </span>
-                        )}
                     </div>
                 </div>
 
                 {/* Submit Button */}
-                <button
-                    type="submit"
-                    className="w-full bg-green-500 py-3 rounded shadow hover:bg-green-600 flex items-center justify-center"
-                >
-                    <FaCheckCircle className="mr-2" />
-                    Add Event
+                <button type="submit" className="w-full bg-green-500 py-3 rounded shadow hover:bg-green-600 flex items-center justify-center">
+                    {loading ? (
+                        <AiOutlineLoading3Quarters size={20} className="text-white animate-spin" />
+                    ) : (
+                        <>
+                            <FaCheckCircle className="mr-2" />
+                            Add Event
+                        </>
+                    )}
                 </button>
             </form>
 
             {/* Display Discounted Price */}
-            {formData.offer && formData.actualPrice && (
+            {formData.actualPrice && formData.offerPercent && (
                 <div className="mt-6 p-4 bg-white rounded text-gray-800 shadow">
                     <p className="font-medium">
                         Discounted Price:{" "}
                         <span className="text-green-600 font-bold">
-                            ${calculateDiscountedPrice().toFixed(2)}
+                            ${calculateDiscountedPrice().toFixed(2) || 0}
                         </span>
                     </p>
                 </div>

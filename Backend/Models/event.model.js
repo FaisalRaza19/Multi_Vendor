@@ -15,8 +15,8 @@ export const admin_events = new mongoose.Schema(
             index: true,
         },
         offerPercent: {
-            type: String,
-            default: "0%",
+            type: Number,
+            default: 0,
         },
         offerPrice: {
             type: Number,

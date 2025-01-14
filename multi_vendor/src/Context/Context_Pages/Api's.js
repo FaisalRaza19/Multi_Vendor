@@ -23,4 +23,14 @@ export const api = {
     verifyShopProfile : `http://localhost:${port}/admin/shop-Verify-edit`,
     ShopLogOut : `http://localhost:${port}/admin/shop-logOut`,
     ShopVerifyJWT : `http://localhost:${port}/admin/shop-VerifyJWT`,
+
+    // add products
+    addProducts : `http://localhost:${port}/admin/shop-addProduct`,
+    deleteProduct : `http://localhost:${port}/admin/shop-delProduct`,
+    editProduct : `http://localhost:${port}/admin/shop-editProduct`,
+
+    // events
+    addEvents : `http://localhost:${port}/admin/shop-addEvent`,
+    delEvents : `http://localhost:${port}/admin/shop-delEvent`,
+    editEvent : `http://localhost:${port}/admin/shop-editEvent`,
 };

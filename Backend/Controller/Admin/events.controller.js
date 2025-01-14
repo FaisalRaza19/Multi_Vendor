@@ -45,7 +45,7 @@ const addEvent = async (req, res) => {
             offerPercentPrice = null;
         }
 
-        const folder = "Multi Vendor/Products Images";
+        const folder = "Multi Vendor/Events Images";
         const images = []; // Array to store uploaded images
 
         // Process each uploaded file and add to the images array
@@ -73,7 +73,7 @@ const addEvent = async (req, res) => {
             images,
             eventStart: eventStartDate,
             eventEnd: eventEndDate,
-            offerPercent: offerPercentValue ? `${offerPercentValue}%` : null,
+            offerPercent: offerPercentValue || null,
             offerPrice: offerPercentPrice,
         };
 
@@ -104,7 +104,7 @@ const getEvent = async (req, res) => {
         }
 
         // Find the shop that contains the product by productId
-        const shop = await Shops.findOne({"events._id" : eventId}).select("-password -refreshToken");
+        const shop = await Shops.findOne({ "events._id": eventId }).select("-password -refreshToken");
 
         if (!shop) {
             return res.status(404).json({ message: "event not found." });
@@ -169,7 +169,7 @@ const editEvent = async (req, res) => {
             return res.status(400).json({ message: "User ID not found." });
         }
 
-        const { eventId, productTitle, actualPrice,offerPercent, productDescription, stock,startDate, endDate  } = req.body;
+        const { eventId, productTitle, actualPrice, offerPercent, productDescription, stock, startDate, endDate } = req.body;
         const eventImages = req.files?.eventImages;
 
         // Validate required fields
@@ -221,42 +221,38 @@ const editEvent = async (req, res) => {
         event.productDescription = productDescription || event.productDescription;
         event.stock = stock || event.stock;
         event.eventStart = eventStartDate,
-        event.eventEnd = eventEndDate,
-        event.offerPercent = offerPercentValue ? `${offerPercentValue}%` : null,
-        event.offerPrice = offerPercentPrice
+            event.eventEnd = eventEndDate,
+            event.offerPercent = offerPercentValue || null,
+            event.offerPrice = offerPercentPrice
 
         // Handle product image updates
         if (eventImages && eventImages.length > 0) {
-            // Delete existing images from Cloudinary
-            for (const image of event.images) {
-                try {
-                    await removeFileFromCloudinary(image.public_id);
-                } catch (deleteError) {
-                    console.error(`Error deleting image (${image.public_id}):`, deleteError);
-                    return res.status(500).json({ message: "Error deleting old images.", error: deleteError });
-                }
+            const retainedIds = req.body.publicId?.map((id) => id) || [];
+            const existingIds = event.images.map((img) => img.public_id);
+
+            // Determine which images to delete
+            const idsToDelete = existingIds.filter((id) => !retainedIds.includes(id));
+            for (const id of idsToDelete) {
+                await removeFileFromCloudinary(id);
             }
 
-            // Upload new images and update the `images` array
-            const images = [];
+            // Upload new images
+            const uploadedImages = [];
             for (const file of eventImages) {
-                try {
-                    const uploadedImage = await fileUploadOnCloudinary(file.path, "Multi Vendor/Products Images");
-                    if (uploadedImage) {
-                        images.push({
-                            public_id: uploadedImage.public_id,
-                            url: uploadedImage.url,
-                        });
-                    }
-                } catch (uploadError) {
-                    console.error(`Error uploading file (${file.path}):`, uploadError);
-                    return res.status(500).json({ message: "Error uploading images.", error: uploadError });
+                const uploadedImage = await fileUploadOnCloudinary(file.path, "Multi Vendor/Events Images");
+                if (uploadedImage) {
+                    uploadedImages.push({
+                        public_id: uploadedImage.public_id,
+                        url: uploadedImage.url,
+                    });
                 }
             }
 
-            if (images.length > 0) {
-                event.images = images;
-            }
+            // Update product images
+            event.images = [
+                ...event.images.filter((img) => retainedIds.includes(img.public_id)),
+                ...uploadedImages,
+            ];
         }
 
         // Save the updated product
@@ -315,4 +311,4 @@ const deleteEvent = async (req, res) => {
     }
 }
 
-export { addEvent,getEvent,get_AdminEvent,deleteEvent,editEvent};
+export { addEvent, getEvent, get_AdminEvent, deleteEvent, editEvent };

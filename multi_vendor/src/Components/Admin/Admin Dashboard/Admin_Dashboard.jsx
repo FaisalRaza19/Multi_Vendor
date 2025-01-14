@@ -1,11 +1,32 @@
+import { useContext, useEffect, useState } from 'react'
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
+import { ContextApi } from "../../../Context/Context.jsx"
 import { orders } from '../../../Static/static'
+import { Link } from 'react-router'
 
-const Admin_Dashboard = ()=>{
+const Admin_Dashboard = () => {
+  const { getShop } = useContext(ContextApi);
+  const [data, setData] = useState();
+  const [productLength, setProductLength] = useState(0);
+
+  // fetch shop 
+  const fetchShop = async () => {
+    try {
+      const data = await getShop();
+      setProductLength(data.shop.products.length)
+      setData(data.shop);
+    } catch (error) {
+      console.error("Error during fetch shop:", error);
+    }
+  }
+
+  useEffect(() => {
+    fetchShop();
+  }, []);
   return (
     <div className="p-4 space-y-8 lg:p-7">
       <h1 className="text-2xl font-semibold">Overview</h1>
-      
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 ">
         <span className="p-6 bg-white">
           <div className="space-y-1">
@@ -18,7 +39,7 @@ const Admin_Dashboard = ()=>{
             Withdraw Money
           </button>
         </span>
-        
+
         <span className="p-6 bg-white">
           <div className="space-y-1">
             <h3 className="text-sm text-gray-600">All Orders</h3>
@@ -28,15 +49,17 @@ const Admin_Dashboard = ()=>{
             View Orders
           </button>
         </span>
-        
+
         <span className="p-6 bg-white">
           <div className="space-y-1">
             <h3 className="text-sm text-gray-600">All Products</h3>
-            <p className="text-2xl font-semibold lg:text-3xl">3</p>
+            <p className="text-2xl font-semibold lg:text-3xl">{productLength || 0}</p>
           </div>
-          <button className="mt-4 text-blue-500 hover:underline">
-            View Products
-          </button>
+          <Link to="/Shop/products">
+            <button className="mt-4 text-blue-500 hover:underline">
+              View Products
+            </button>
+          </Link>
         </span>
       </div>
 
@@ -58,11 +81,10 @@ const Admin_Dashboard = ()=>{
                 <tr key={order.id} className="border-b">
                   <td className="px-6 py-4 text-sm whitespace-nowrap">{order.id}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs rounded ${
-                      order.status === 'Refund Success' 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-blue-100 text-blue-800"
-                    }`}>
+                    <span className={`px-2 py-1 text-xs rounded ${order.status === 'Refund Success'
+                      ? "bg-green-100 text-green-800"
+                      : "bg-blue-100 text-blue-800"
+                      }`}>
                       {order.status}
                     </span>
                   </td>

@@ -15,12 +15,13 @@ export const addProduct = new mongoose.Schema(
             index: true,
         },
         giveOffer: {
-            type: String,
+            type: Boolean,
             required: true,
+            default : false,
         },
         offerPercent: {
-            type: String,
-            default: "0%",
+            type: Number,
+            default: 0,
         },
         offerPrice: {
             type: Number,

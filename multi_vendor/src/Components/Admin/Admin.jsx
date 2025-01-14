@@ -9,6 +9,7 @@ import Admin_Products from "./Admin Dashboard/Admin_Products.jsx"
 import Admin_Profile from './Admin Dashboard/Admin_Profile.jsx'
 import Admin_AddProduct from './Admin Dashboard/Admin_AddProduct.jsx'
 import Admin_CreateEvent from './Admin Dashboard/Admin_CreateEvent.jsx'
+import Admin_Events from './Admin Dashboard/Admin_Events.jsx'
 
 const Admin = ({isAuth}) => {
     return (
@@ -24,6 +25,7 @@ const Admin = ({isAuth}) => {
                             <Route path="/orders" element={<Admin_Orders />} />
                             <Route path="/products" element={<Admin_Products />} />
                             <Route path="/create-product" element={<Admin_AddProduct />} />
+                            <Route path="/events" element={<Admin_Events />} />
                             <Route path="/create-event" element={<Admin_CreateEvent />} />
                             <Route path="/order/:id" element={<Admin_OrderDetails />} />
                             <Route path="/settings" element={<Admin_Profile/>}/>

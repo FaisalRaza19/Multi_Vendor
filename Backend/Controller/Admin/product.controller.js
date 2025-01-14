@@ -1,8 +1,8 @@
-import { fileUploadOnCloudinary } from "../../utils/fileUploadAndRemoveFromCloudinary.js";
-import { removeFileFromCloudinary } from "../../utils/fileUploadAndRemoveFromCloudinary.js";
+import { fileUploadOnCloudinary, removeFileFromCloudinary } from "../../utils/fileUploadAndRemoveFromCloudinary.js";
 import { Shops } from "../../Models/Admin.model.js";
 import { ProductVerifier } from "../../utils/InputVerifier.js"
 
+// add product
 const addProduct = async (req, res) => {
     try {
         const userId = req.admin._id;
@@ -42,6 +42,7 @@ const addProduct = async (req, res) => {
                 return res.status(500).json({ message: "Error uploading images.", error: uploadError });
             }
         }
+        const calculateOfferPrice = parseFloat(actualPrice) - (parseFloat(actualPrice) * parseFloat(offerPercent)) / 100;
 
         // Create new product with the uploaded images
         const newProduct = {
@@ -50,9 +51,9 @@ const addProduct = async (req, res) => {
             productDescription,
             stock,
             images, // Store the images array
-            giveOffer: giveOffer === 'give Offer' ? 'give Offer' : 'did not give Offer',
-            offerPercent: giveOffer === 'give Offer' ? `${offerPercent}%` : null,
-            offerPrice: giveOffer === 'give Offer' ? actualPrice - (actualPrice * offerPercent) / 100 : null,
+            giveOffer: giveOffer === "true" ? true : false,
+            offerPercent: giveOffer === "true" ? offerPercent : null,
+            offerPrice: giveOffer === "true" ? calculateOfferPrice : null,
         };
 
         // Find the shop and add the new product
@@ -119,7 +120,7 @@ const getProduct = async (req, res) => {
         }
 
         // Find the shop that contains the product by productId
-        const shop = await Shops.findOne({"products._id" : productId}).select("-password -refreshToken");
+        const shop = await Shops.findOne({ "products._id": productId }).select("-password -refreshToken");
 
         if (!shop) {
             return res.status(404).json({ message: "Product not found." });
@@ -140,7 +141,7 @@ const getProduct = async (req, res) => {
     }
 };
 
-// edit product 
+// edit product
 const editProduct = async (req, res) => {
     try {
         const userId = req.admin._id;
@@ -152,20 +153,14 @@ const editProduct = async (req, res) => {
         const productImages = req.files?.productImages;
 
         // Validate required fields
-        if (!productTitle || !actualPrice || !giveOffer || !offerPercent || !productDescription || !stock) {
-            return res.status(400).json({ message: "All fields are required." });
+        if (!productId || !productTitle || !actualPrice || !productDescription || !stock) {
+            return res.status(400).json({ message: "All required fields must be provided." });
         }
 
-        // Verify product input fields
-        const verifyProduct = ProductVerifier(req.body);
-        if (verifyProduct !== true) {
-            return res.status(400).json({ message: "Invalid input", error: verifyProduct });
-        }
-
-        // Find the shop by product ID
-        const shop = await Shops.findOne(userId).select("-password -refreshToken");
+        // Find the shop associated with the admin user
+        const shop = await Shops.findOne({ _id: userId }).select("-password -refreshToken");
         if (!shop) {
-            return res.status(404).json({ message: "Product not found in any shop." });
+            return res.status(404).json({ message: "Shop not found." });
         }
 
         // Find the specific product within the shop
@@ -175,64 +170,56 @@ const editProduct = async (req, res) => {
         }
 
         // Update product details
-        product.productTitle = productTitle || product.productTitle;
-        product.actualPrice = actualPrice || product.actualPrice;
-        product.productDescription = productDescription || product.productDescription;
-        product.stock = stock || product.stock;
+        product.productTitle = productTitle;
+        product.actualPrice = actualPrice;
+        product.productDescription = productDescription;
+        product.stock = stock;
 
-        // Handle offer price
-        product.giveOffer = giveOffer === 'give Offer' ? 'give Offer' : 'did not give Offer';
-        product.offerPercent = giveOffer === 'give Offer' ? `${offerPercent}%` : null;
-        product.offerPrice = giveOffer === 'give Offer' ? actualPrice - (actualPrice * offerPercent) / 100 : null;
+        // Handle offer-related fields
+        product.giveOffer = giveOffer === "true";
+        product.offerPercent = product.giveOffer ? offerPercent || product.offerPercent : null;
+        product.offerPrice = product.giveOffer
+            ? ((actualPrice - (actualPrice * (offerPercent || 0)) / 100).toFixed(2))
+            : null;
 
         // Handle product image updates
         if (productImages && productImages.length > 0) {
-            // Delete existing images from Cloudinary
-            for (const image of product.images) {
-                try {
-                    await removeFileFromCloudinary(image.public_id);
-                } catch (deleteError) {
-                    console.error(`Error deleting image (${image.public_id}):`, deleteError);
-                    return res.status(500).json({ message: "Error deleting old images.", error: deleteError });
-                }
+            const retainedIds = req.body.publicId?.map((id) => id) || [];
+            const existingIds = product.images.map((img) => img.public_id);
+
+            // Determine which images to delete
+            const idsToDelete = existingIds.filter((id) => !retainedIds.includes(id));
+            for (const id of idsToDelete) {
+                await removeFileFromCloudinary(id);
             }
 
-            // Upload new images and update the `images` array
-            const images = [];
+            // Upload new images
+            const uploadedImages = [];
             for (const file of productImages) {
-                try {
-                    const uploadedImage = await fileUploadOnCloudinary(file.path, "Multi Vendor/Products Images");
-                    if (uploadedImage) {
-                        images.push({
-                            public_id: uploadedImage.public_id,
-                            url: uploadedImage.url,
-                        });
-                    }
-                } catch (uploadError) {
-                    console.error(`Error uploading file (${file.path}):`, uploadError);
-                    return res.status(500).json({ message: "Error uploading images.", error: uploadError });
+                const uploadedImage = await fileUploadOnCloudinary(file.path, "Multi Vendor/Products Images");
+                if (uploadedImage) {
+                    uploadedImages.push({
+                        public_id: uploadedImage.public_id,
+                        url: uploadedImage.url,
+                    });
                 }
             }
 
-            if (images.length > 0) {
-                product.images = images;
-            }
+            // Update product images
+            product.images = [
+                ...product.images.filter((img) => retainedIds.includes(img.public_id)),
+                ...uploadedImages,
+            ];
         }
 
         // Save the updated product
         await shop.save();
-
-        return res.status(200).json({
-            statusCode: 200,
-            data: product,
-            message: "Product updated successfully",
-        });
+        return res.status(200).json({ data: product, message: "Product updated successfully" });
     } catch (error) {
         console.error("Error editing product:", error);
-        return res.status(500).json({ message: "Something went wrong while editing the product.", error });
+        return res.status(500).json({ message: "Something went wrong.", error: error.message });
     }
 };
-
 
 // delete product 
 const deleteProduct = async (req, res) => {
@@ -276,4 +263,4 @@ const deleteProduct = async (req, res) => {
     }
 }
 
-export { addProduct, getProduct,admin_getProduct, editProduct, deleteProduct };
+export { addProduct, getProduct, admin_getProduct, editProduct, deleteProduct };

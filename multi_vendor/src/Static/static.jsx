@@ -26,6 +26,36 @@ export const sideItems = [
     { icon: IoSettingsOutline, label: 'Settings', href: '/Shop/settings' },
 ];
 
+export const Products = [
+    {
+        id: 1,
+        images: [
+            "https://via.placeholder.com/500x500?text=Product+1+Image+1",
+            "https://via.placeholder.com/500x500?text=Product+1+Image+2",
+            "https://via.placeholder.com/500x500?text=Product+1+Image+3",
+        ],
+        title: "Product 1",
+        price: 100,
+        offerPrice: 80,
+        totalSold: 50,
+        description: "This is product 1 description. It's a great product with many features.",
+        ratings: 4.5,
+        reviews: 10,
+    },
+    {
+        id: 2,
+        images: [
+            "https://via.placeholder.com/500x500?text=Product+2+Image+1",
+            "https://via.placeholder.com/500x500?text=Product+2+Image+2",
+        ],
+        title: "Product 2",
+        price: 200,
+        totalSold: 30,
+        description: "Product 2 is our premium offering. It comes with extended warranty.",
+        ratings: 4.8,
+        reviews: 15,
+    },
+];
 
 // shop order 
 export const orders = [
@@ -48,8 +78,6 @@ export const orders = [
         total: 53.9
     }
 ]
-
-
 
 // navigation Data
 export const navItems = [
