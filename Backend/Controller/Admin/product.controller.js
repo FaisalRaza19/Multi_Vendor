@@ -2,7 +2,7 @@ import { fileUploadOnCloudinary, removeFileFromCloudinary } from "../../utils/fi
 import { Shops } from "../../Models/Admin.model.js";
 import { ProductVerifier } from "../../utils/InputVerifier.js"
 
-// add product
+// Add Product
 const addProduct = async (req, res) => {
     try {
         const userId = req.admin._id;
@@ -10,11 +10,11 @@ const addProduct = async (req, res) => {
             return res.status(400).json({ message: "User ID not found." });
         }
 
-        const { productTitle, actualPrice, giveOffer, offerPercent, productDescription, stock } = req.body;
+        const { productTitle, actualPrice, giveOffer, offerPercent, productDescription, stock, category } = req.body;
         const productImages = req.files?.productImages;
 
         // Check for missing fields
-        if (!productTitle || !actualPrice || !giveOffer || !offerPercent || !productDescription || !stock || !productImages) {
+        if (!productTitle || !actualPrice || !giveOffer || !offerPercent || !productDescription || !stock || !productImages || !category) {
             return res.status(400).json({ message: "All fields are required." });
         }
 
@@ -25,7 +25,7 @@ const addProduct = async (req, res) => {
         }
 
         const folder = "Multi Vendor/Products Images";
-        const images = []; // Array to store uploaded images
+        const images = [];
 
         // Process each uploaded file and add to the images array
         for (const file of productImages) {
@@ -44,25 +44,30 @@ const addProduct = async (req, res) => {
         }
         const calculateOfferPrice = parseFloat(actualPrice) - (parseFloat(actualPrice) * parseFloat(offerPercent)) / 100;
 
-        // Create new product with the uploaded images
-        const newProduct = {
-            productTitle,
-            actualPrice,
-            productDescription,
-            stock,
-            images, // Store the images array
-            giveOffer: giveOffer === "true" ? true : false,
-            offerPercent: giveOffer === "true" ? offerPercent : null,
-            offerPrice: giveOffer === "true" ? calculateOfferPrice : null,
-        };
-
         // Find the shop and add the new product
         const shop = await Shops.findOne({ _id: userId }).select("-password -refreshToken");
         if (!shop) {
             return res.status(404).json({ message: "Shop not found." });
         }
 
-        shop.products.push(newProduct);
+        // Create new product with the uploaded images
+        const newProduct = {
+            productTitle,
+            actualPrice,
+            productDescription,
+            category,
+            stock,
+            shopInfo: {
+                shopId : shop._id,
+                shopName : shop.shopName,
+            },
+            images,
+            giveOffer: giveOffer === "true" ? true : false,
+            offerPercent: giveOffer === "true" ? offerPercent : null,
+            offerPrice: giveOffer === "true" ? calculateOfferPrice : null,
+        };
+
+        shop.products.push(newProduct)
         await shop.save();
 
         return res.status(201).json({ message: "Product added successfully.", product: newProduct });
@@ -73,22 +78,16 @@ const addProduct = async (req, res) => {
     }
 };
 
-// get as a admin product 
-const admin_getProduct = async (req, res) => {
+// get product through :id
+const getProduct = async (req, res) => {
     try {
-        const userId = req.admin._id;
-        if (!userId) {
-            return res.status(400).json({ message: "User ID not found." });
-        }
         const { productId } = req.body;
-
-        // Check if productId is provided
         if (!productId) {
             return res.status(400).json({ message: "Product ID is required." });
         }
 
         // Find the shop that contains the product by productId
-        const shop = await Shops.findOne(userId).select("-password -refreshToken");
+        const shop = await Shops.findOne({"products._id" : productId}).select("-password -refreshToken");
 
         if (!shop) {
             return res.status(404).json({ message: "Product not found." });
@@ -109,35 +108,30 @@ const admin_getProduct = async (req, res) => {
     }
 };
 
-// get product 
-const getProduct = async (req, res) => {
+// get all products present in shop collection in mongo db products 
+const get_allProduct = async (req, res) => {
     try {
-        const { productId } = req.body;
+        // Fetch all shops
+        const shops = await Shops.find({}, { products: 1, _id: 0 });
 
-        // Check if productId is provided
-        if (!productId) {
-            return res.status(400).json({ message: "Product ID is required." });
+        // Extract all products from the `products` array in each shop
+        const allProducts = shops.flatMap((shop) => shop.products || []);
+
+        if (allProducts.length === 0) {
+            return res.status(404).json({ message: "No products found in any shop." });
         }
 
-        // Find the shop that contains the product by productId
-        const shop = await Shops.findOne({ "products._id": productId }).select("-password -refreshToken");
-
-        if (!shop) {
-            return res.status(404).json({ message: "Product not found." });
-        }
-
-        // Extract the specific product from the shop
-        const product = shop.products.find((prod) => prod._id.toString() === productId);
-
-        if (!product) {
-            return res.status(404).json({ message: "Product not found in the shop." });
-        }
-
-        // Return the product
-        return res.status(200).json({ message: "Product retrieved successfully.", product });
+        // Return the combined list of products
+        return res.status(200).json({
+            message: "Products retrieved successfully.",
+            products: allProducts,
+        });
     } catch (error) {
-        console.error("Error getting product:", error);
-        return res.status(500).json({ message: "Something went wrong while retrieving the product.", error });
+        console.error("Error getting products:", error);
+        return res.status(500).json({
+            message: "Something went wrong while retrieving the products.",
+            error: error.message,
+        });
     }
 };
 
@@ -149,11 +143,11 @@ const editProduct = async (req, res) => {
             return res.status(400).json({ message: "User ID not found." });
         }
 
-        const { productId, productTitle, actualPrice, giveOffer, offerPercent, productDescription, stock } = req.body;
+        const { productId, productTitle, actualPrice, giveOffer, category, offerPercent, productDescription, stock } = req.body;
         const productImages = req.files?.productImages;
 
         // Validate required fields
-        if (!productId || !productTitle || !actualPrice || !productDescription || !stock) {
+        if (!productId || !productTitle || !actualPrice || !productDescription || !stock || !category) {
             return res.status(400).json({ message: "All required fields must be provided." });
         }
 
@@ -174,6 +168,7 @@ const editProduct = async (req, res) => {
         product.actualPrice = actualPrice;
         product.productDescription = productDescription;
         product.stock = stock;
+        product.category = category;
 
         // Handle offer-related fields
         product.giveOffer = giveOffer === "true";
@@ -263,4 +258,4 @@ const deleteProduct = async (req, res) => {
     }
 }
 
-export { addProduct, getProduct, admin_getProduct, editProduct, deleteProduct };
+export { addProduct, get_allProduct, getProduct, editProduct, deleteProduct };

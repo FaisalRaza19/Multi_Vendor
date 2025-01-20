@@ -275,23 +275,48 @@ const shopLogOut = async (req, res) => {
     }
 }
 
-// get Shop 
+// get Shop :id
 const getShop = async (req, res) => {
     try {
-        const userId = req.admin._id;
-        if (!userId) {
-            return res.status(400).json({ message: "User did not found" })
-        };
+        const {id} = req.params;
+        if (!id) {
+            return res.status(400).json({ message: "shop did not found" })
+        }
 
         // find the shop 
-        const shop = await Shops.findOne(userId).select("-refreshToken -password")
+        const shop = await Shops.findOne({ _id: id }).select("-refreshToken -password -personalInfo -phoneNumber -Orders -completedOrder")
         if (!shop) {
             return res.status(404).json({ message: "User does not exist" });
         }
 
         return res.status(200).json({ statusCode: 200, data: { shop }, message: "Shop get Successfully" })
     } catch (error) {
-        return res.status(500).json({ message: "internal server error to logOut the shop", error: error })
+        return res.status(500).json({ message: "internal server error to get the shop", error: error })
+    }
+}
+
+// get shop with token and id
+const admin_getShop = async (req, res) => {
+    try {
+        const { shopId } = req.body;
+        if (!shopId) {
+            return res.status(400).json({ message: "shop did not found" })
+        }
+
+        const userId = req.admin._id;
+        if (!userId) {
+            return res.status(400).json({ message: "User did not found" })
+        };
+
+        // find the shop 
+        const shop = await Shops.findOne({ _id: shopId } && userId).select("-refreshToken -password")
+        if (!shop) {
+            return res.status(404).json({ message: "User does not exist" });
+        }
+
+        return res.status(200).json({ statusCode: 200, data: { shop }, message: "Shop get Successfully" })
+    } catch (error) {
+        return res.status(500).json({ message: "internal server error to get the shop", error: error })
     }
 }
 
@@ -428,6 +453,6 @@ const verifyJWT = async (req, res) => {
 }
 
 export {
-    RegisterShop, resendVerificationCode, verifyAndCreate, shopLogin, updateShopLogo, shopLogOut, getShop,
+    RegisterShop, resendVerificationCode, verifyAndCreate, shopLogin, updateShopLogo, shopLogOut, getShop, admin_getShop,
     editShop, verifyAndEdit, verifyJWT
 }

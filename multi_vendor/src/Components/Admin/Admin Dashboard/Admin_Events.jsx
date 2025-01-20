@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react'
 import { FaEye, FaEdit, FaTrash, FaTimes, FaArrowLeft, FaArrowRight, FaUpload } from 'react-icons/fa'
 import { AiOutlineLoading3Quarters } from 'react-icons/ai'
 import { ContextApi } from '../../../Context/Context'
+import { categoriesData as categories } from "../../../Static/static.jsx"
 
 const Admin_Events = () => {
     const { getShop, deleteEvents, editEvent } = useContext(ContextApi)
@@ -74,6 +75,7 @@ const Admin_Events = () => {
                 eventImages: editProduct?.images?.map((img) => img?.file).filter((file) => file !== null),
                 startDate: editProduct?.eventStart,
                 endDate: editProduct?.eventEnd,
+                category : editProduct?.category,
             };
 
             const updatedProduct = await editEvent(productData);
@@ -278,6 +280,7 @@ const Admin_Events = () => {
             )
             }
 
+            {/* view pop up  */}
             {viewProduct && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-full overflow-y-auto">
@@ -319,6 +322,11 @@ const Admin_Events = () => {
                                 <span className="text-xl font-bold text-amber-600">{viewProduct.offerPercent}% OFF</span>
                             </div>
                             <div className="mb-2">
+                                <p>Category :
+                                    <span className="text-blue-400 ml-1">
+                                        {viewProduct.category}
+                                    </span>
+                                </p>
                                 <p>Start Date :
                                     <span className="text-blue-400 ml-1">
                                         {viewProduct.eventStart ? formatDate(viewProduct.eventStart) : 'Event Start'}
@@ -342,6 +350,7 @@ const Admin_Events = () => {
             )
             }
 
+            {/* edit product pop up  */}
             {editProduct && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-full overflow-y-auto">
@@ -398,6 +407,28 @@ const Admin_Events = () => {
                                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         required
                                     />
+                                </div>
+                                {/* category  */}
+                                <div className="mb-4">
+                                    <label className="block font-medium mb-2" htmlFor="category">
+                                        Category
+                                    </label>
+                                    <select
+                                        id="category"
+                                        name="category"
+                                        value={editProduct.category}
+                                        onChange={handleChange}
+                                        className="w-full p-3 rounded bg-white text-gray-800 shadow focus:outline-none focus:ring focus:ring-black"
+                                    >
+                                        <option value="" disabled>
+                                            Select a category
+                                        </option>
+                                        {categories.map((e, index) => (
+                                            <option key={index} value={e.title}>
+                                                {e.title}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="mb-4">
                                     <label htmlFor="eventStart" className="block font-bold mb-2">End Date</label>

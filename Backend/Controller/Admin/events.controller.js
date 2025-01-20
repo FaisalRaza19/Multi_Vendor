@@ -11,11 +11,11 @@ const addEvent = async (req, res) => {
             return res.status(400).json({ message: "User ID not found." });
         }
 
-        const { productTitle, actualPrice, offerPercent, productDescription, stock, startDate, endDate } = req.body;
+        const { productTitle, actualPrice, offerPercent, productDescription, stock, startDate, endDate, category } = req.body;
         const productImages = req.files?.productImages;
 
         // Check for missing fields
-        if (!productTitle || !actualPrice || !offerPercent || !productDescription || !stock || !startDate || !endDate || !productImages) {
+        if (!productTitle || !actualPrice || !offerPercent || !productDescription || !category || !stock || !startDate || !endDate || !productImages) {
             return res.status(400).json({ message: "All fields are required." });
         }
 
@@ -62,19 +62,6 @@ const addEvent = async (req, res) => {
                 console.error(`Error uploading file:`, uploadError);
                 return res.status(500).json({ message: "Error uploading images.", error: uploadError });
             }
-        }
-
-        // Create new product with the uploaded images
-        const newProduct = {
-            productTitle,
-            actualPrice,
-            productDescription,
-            stock,
-            images,
-            eventStart: eventStartDate,
-            eventEnd: eventEndDate,
-            offerPercent: offerPercentValue || null,
-            offerPrice: offerPercentPrice,
         };
 
         // Find the shop and add the new product
@@ -82,6 +69,24 @@ const addEvent = async (req, res) => {
         if (!shop) {
             return res.status(404).json({ message: "Shop not found." });
         }
+
+        // Create new product with the uploaded images
+        const newProduct = {
+            productTitle,
+            actualPrice,
+            productDescription,
+            category,
+            shopInfo: {
+                shopId : shop._id,
+                shopName : shop.shopName,
+            },
+            stock,
+            images,
+            eventStart: eventStartDate,
+            eventEnd: eventEndDate,
+            offerPercent: offerPercentValue || null,
+            offerPrice: offerPercentPrice,
+        };
 
         shop.events.push(newProduct);
         await shop.save();
@@ -94,53 +99,41 @@ const addEvent = async (req, res) => {
 };
 
 // get event 
-const getEvent = async (req, res) => {
+const getAllEvent = async (req, res) => {
     try {
-        const { eventId } = req.body;
+        // Fetch all shops
+        const shops = await Shops.find({}, { events: 1, _id: 0 });
 
-        // Check if eventId is provided
-        if (!eventId) {
-            return res.status(400).json({ message: "event ID is required." });
+        const allProducts = shops.flatMap((shop) => shop.events || []);
+
+        if (allProducts.length === 0) {
+            return res.status(404).json({ message: "No products found in any shop." });
         }
 
-        // Find the shop that contains the product by productId
-        const shop = await Shops.findOne({ "events._id": eventId }).select("-password -refreshToken");
-
-        if (!shop) {
-            return res.status(404).json({ message: "event not found." });
-        }
-
-        // Extract the specific product from the shop
-        const event = shop.events.find((prod) => prod._id.toString() === eventId);
-
-        if (!event) {
-            return res.status(404).json({ message: "event not found in the shop." });
-        }
-
-        // Return the product
-        return res.status(200).json({ message: "event retrieved successfully.", event });
+        // Return the combined list of products
+        return res.status(200).json({
+            message: "events retrieved successfully.",
+            products: allProducts,
+        });
     } catch (error) {
-        console.error("Error getting product:", error);
-        return res.status(500).json({ message: "Something went wrong while retrieving the event.", error });
+        console.error("Error getting products:", error);
+        return res.status(500).json({
+            message: "Something went wrong while retrieving the products.",
+            error: error.message,
+        });
     }
 };
 
 // get event:id
-const get_AdminEvent = async (req, res) => {
+const getEvent = async (req, res) => {
     try {
-        const userId = req.admin._id;
-        if (!userId) {
-            return res.status(400).json({ message: "User ID not found." });
-        }
         const { eventId } = req.body;
-
-        // Check if eventId is provided
         if (!eventId) {
             return res.status(400).json({ message: "event ID is required." });
         }
 
         // Find the shop that contains the product by productId
-        const shop = await Shops.findOne(userId).select("-password -refreshToken");
+        const shop = await Shops.findOne({"events._id":eventId}).select("-password -refreshToken");
 
         if (!shop) {
             return res.status(404).json({ message: "event not found." });
@@ -169,11 +162,11 @@ const editEvent = async (req, res) => {
             return res.status(400).json({ message: "User ID not found." });
         }
 
-        const { eventId, productTitle, actualPrice, offerPercent, productDescription, stock, startDate, endDate } = req.body;
+        const { eventId, productTitle, actualPrice, offerPercent, productDescription, category, stock, startDate, endDate } = req.body;
         const eventImages = req.files?.eventImages;
 
         // Validate required fields
-        if (!eventId || !productTitle || !actualPrice || !offerPercent || !productDescription || !stock) {
+        if (!eventId || !productTitle || !actualPrice || !offerPercent || !category || !productDescription || !stock) {
             return res.status(400).json({ message: "All fields are required." });
         }
 
@@ -220,6 +213,7 @@ const editEvent = async (req, res) => {
         event.actualPrice = actualPrice || event.actualPrice;
         event.productDescription = productDescription || event.productDescription;
         event.stock = stock || event.stock;
+        event.category = category || event.category;
         event.eventStart = eventStartDate,
             event.eventEnd = eventEndDate,
             event.offerPercent = offerPercentValue || null,
@@ -311,4 +305,4 @@ const deleteEvent = async (req, res) => {
     }
 }
 
-export { addEvent, getEvent, get_AdminEvent, deleteEvent, editEvent };
+export { addEvent, getAllEvent, getEvent, deleteEvent, editEvent };

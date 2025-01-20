@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { FaUpload, FaCheckCircle, FaTag, FaTrash } from "react-icons/fa";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { ContextApi } from "../../../Context/Context.jsx";
+import { categoriesData as categories } from "../../../Static/static.jsx"
 
 const Admin_AddProduct = () => {
   const { addProducts } = useContext(ContextApi);
@@ -13,6 +14,7 @@ const Admin_AddProduct = () => {
     offerPercent: null,
     stock: "",
     productImages: [],
+    category: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -54,7 +56,7 @@ const Admin_AddProduct = () => {
     setLoading(true);
     try {
       const productData = formData;
-      const data = await addProducts({productData});
+      await addProducts({ productData });
     } catch (error) {
       console.error("Error during product addition:", error);
       alert("Failed to add the product. Please try again.");
@@ -67,6 +69,7 @@ const Admin_AddProduct = () => {
         productDescription: "",
         stock: "",
         productImages: [],
+        category: "",
       });
       setLoading(false);
     }
@@ -161,6 +164,28 @@ const Admin_AddProduct = () => {
             <option value="In Stock">In Stock</option>
             <option value="Out of Stock">Out of Stock</option>
             <option value="Limited Stock">Limited Stock</option>
+          </select>
+        </div>
+
+        <div className="mb-4">
+          <label className="block font-medium mb-2" htmlFor="category">
+            Category
+          </label>
+          <select
+            id="category"
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            className="w-full p-3 rounded bg-white text-gray-800 shadow focus:outline-none focus:ring focus:ring-black"
+          >
+            <option value="" disabled>
+              Select a category
+            </option>
+            {categories.map((e, index) => (
+              <option key={index} value={e.title}>
+                {e.title}
+              </option>
+            ))}
           </select>
         </div>
 

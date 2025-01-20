@@ -3,6 +3,10 @@ import { productReview } from "./review.model.js"
 
 export const admin_events = new mongoose.Schema(
     {
+        shopInfo : {
+            type : Object,
+            required : true,
+        },
         productTitle: {
             type: String,
             required: true,
@@ -23,6 +27,10 @@ export const admin_events = new mongoose.Schema(
             default: 0,
         },
         productDescription: {
+            type: String,
+            required: true,
+        },
+        category: {
             type: String,
             required: true,
         },

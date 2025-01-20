@@ -2,68 +2,43 @@ import mongoose from "mongoose";
 
 export const orderSchema = new mongoose.Schema(
     {
-        products: [
-            {
-                productId: {
-                    type: String,
-                    required: true,
-                },
-                productImage: {
-                    url: {
-                        type: String,
-                        required: true,
-                    },
-                },
-                productTitle: {
-                    type: String,
-                    required: true,
-                },
-                productPrice: {
-                    type: Number,
-                    required: true,
-                },
-                eachProductQuantity: {
-                    type: Number,
-                    required: true,
-                },
-                totalPrice: {
-                    type: Number,
-                    required: true,
-                },
-                shopId: {
-                    type: String,
-                    required: true,
-                },
-            },
-        ],
-        userAddress: {
-            country: { type: String, required: true },
-            state: { type: String, required: true },
-            city: { type: String, required: true },
-            zipCode: { type: String, required: true },
-            homeAddress: { type: String, required: true },
+        items: {
+            type: Array,
+            required: true,
         },
-        totalBill: {
+        shippingAddress: {
+            type: Object,
+            required: true,
+        },
+        user: {
+            type: Object,
+            required: true,
+        },
+        totalPrice: {
             type: Number,
             required: true,
         },
-        paymentMethod: {
+        status: {
             type: String,
-            required: true,
+            default: "Processing",
         },
-        paymentDetails: {
-            bankName: {
+        paymentInfo: {
+            id: {
                 type: String,
             },
-            accountHolderName: {
+            status: {
                 type: String,
             },
-            encryptedAccountNumber: {
+            type: {
                 type: String,
             },
-            paymentStatus: {
-                type: String,
-            },
+        },
+        paidAt: {
+            type: Date,
+            default: Date.now(),
+        },
+        deliveredAt: {
+            type: Date,
         },
     },
     {

@@ -17,13 +17,14 @@ import "./index.css";
 import Admin from "./Components/Admin/Admin.jsx";
 import Admin_Register from "./Components/Admin/Forms/Admin_Register.jsx";
 import AdminLogin from "./Components/Admin/Forms/admin_Login.jsx";
+import AdminShop from "./Components/Pages/Other Pages/admin_Shop.jsx";
 import { ContextApi } from "./Context/Context.jsx";
 
 function App() {
   const { ShopVerifyJWT, verifyJWT } = useContext(ContextApi);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [shopAuth, setShopAuth] = useState(false);
-  const [shopPath, setShopPath] = useState("/");
+  const [shopPath, setShopPath] = useState("/Shop");
   const [path, setPath] = useState("/");
 
   useEffect(() => {
@@ -77,38 +78,39 @@ function App() {
 
   return (
     <>
-      {!isAuthPage && !isShopDashBoard && <Navbar path={path} shopPath={shopPath} />}
-      <Routes>
-        {/* main routes  */}
-        <Route path="/" element={<Home />} />
-        <Route path="/products" element={<Product />} />
-        <Route path="/best-selling" element={<Product />} />
-        <Route path="/events" element={<Events />} />
-        <Route path="/FAQ" element={<FAQ />} />
-        {/* seller routes */}
-        <Route path="/Shop-login" element={!shopAuth ? <AdminLogin isAuth={setShopAuth} /> : <Navigate to="/Shop/dashboard" replace />} />
-        <Route path="/Shop-register" element={!shopAuth ? <Admin_Register /> : <Navigate to="/Shop/dashboard" replace />} />
-        <Route path="/Shop/email-verify" element={!shopAuth ? <AdminVerifyEmail isAuth={setShopAuth} /> : <Navigate to="/Shop/dashboard" replace />} />
-        <Route path="/Shop/profile-verify" element={<AdminVerifyProfile />} />
-        <Route path="/Shop/*" element={shopAuth ? <Admin isAuth={setShopAuth} /> : <Navigate to="/Shop-register" replace />} />
-        {/* Authentication Routes */}
-        <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login isAuth={setIsAuthenticated} />} />
-        <Route path="/sign-up" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <SignUp />} />
-        <Route path="/code-verify" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <CodeVerification setAuth={setIsAuthenticated} />} />
-        <Route path="/email-verify" element={<VerifyEmail isAuth={setIsAuthenticated} />} />
-        <Route
-          path="/dashboard/*"
-          element={
-            isAuthenticated ? (
-              <Index isAuth={setIsAuthenticated} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-      {!isAuthPage && !isDashBoardPage && !isShopDashBoard && <Footer path={path} />}
+        {!isAuthPage && !isShopDashBoard && <Navbar path={path} shopPath={shopPath} />}
+        <Routes>
+          {/* main routes  */}
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Product />} />
+          <Route path="/best-selling" element={<Product />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/FAQ" element={<FAQ />} />
+          <Route path="/Shop/:id" element={<AdminShop/>}/>
+          {/* seller routes */}
+          <Route path="/Shop-login" element={!shopAuth ? <AdminLogin isAuth={setShopAuth} /> : <Navigate to="/Shop/dashboard" replace />} />
+          <Route path="/Shop-register" element={!shopAuth ? <Admin_Register /> : <Navigate to="/Shop/dashboard" replace />} />
+          <Route path="/Shop/email-verify" element={!shopAuth ? <AdminVerifyEmail isAuth={setShopAuth} /> : <Navigate to="/Shop/dashboard" replace />} />
+          <Route path="/Shop/profile-verify" element={<AdminVerifyProfile />} />
+          <Route path="/Shop/*" element={shopAuth ? <Admin isAuth={setShopAuth} /> : <Navigate to="/Shop-register" replace />} />
+          {/* Authentication Routes */}
+          <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login isAuth={setIsAuthenticated} />} />
+          <Route path="/sign-up" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <SignUp />} />
+          <Route path="/code-verify" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <CodeVerification setAuth={setIsAuthenticated} />} />
+          <Route path="/email-verify" element={<VerifyEmail isAuth={setIsAuthenticated} />} />
+          <Route
+            path="/dashboard/*"
+            element={
+              isAuthenticated ? (
+                <Index isAuth={setIsAuthenticated} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+        {!isAuthPage && !isDashBoardPage && !isShopDashBoard && <Footer path={path} />}
     </>
   );
 }

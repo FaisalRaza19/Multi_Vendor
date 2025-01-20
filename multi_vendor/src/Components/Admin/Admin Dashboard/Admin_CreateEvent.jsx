@@ -1,7 +1,8 @@
 import React, { useContext, useState } from "react";
-import { FaUpload, FaCheckCircle, FaTag, FaCalendarAlt,FaTrash } from "react-icons/fa";
+import { FaUpload, FaCheckCircle, FaTag, FaCalendarAlt, FaTrash } from "react-icons/fa";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
-import { ContextApi } from "../../../Context/Context.jsx"
+import { ContextApi } from "../../../Context/Context.jsx";
+import { categoriesData as categories } from "../../../Static/static.jsx"
 
 const Admin_CreateEvent = () => {
     const { addEvents } = useContext(ContextApi);
@@ -14,6 +15,7 @@ const Admin_CreateEvent = () => {
         productImages: [],
         startDate: "",
         endDate: "",
+        category : "",
     });
     const [loading, setLoading] = useState(false);
 
@@ -120,6 +122,29 @@ const Admin_CreateEvent = () => {
                         placeholder="Enter actual price"
                         required
                     />
+                </div>
+
+                {/* category  */}
+                <div className="mb-4">
+                    <label className="block font-medium mb-2" htmlFor="category">
+                        Category
+                    </label>
+                    <select
+                        id="category"
+                        name="category"
+                        value={formData.category}
+                        onChange={handleChange}
+                        className="w-full p-3 rounded bg-white text-gray-800 shadow focus:outline-none focus:ring focus:ring-black"
+                    >
+                        <option value="" disabled>
+                            Select a category
+                        </option>
+                        {categories.map((e, index) => (
+                            <option key={index} value={e.title}>
+                                {e.title}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
                 {/* Event Start Date */}

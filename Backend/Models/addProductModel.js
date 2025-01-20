@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
-import { productReview } from "./review.model.js"
+import { productReview } from "./review.model.js";
+import { couponSchema } from "./cupon.model.js";
 
 export const addProduct = new mongoose.Schema(
     {
@@ -17,7 +18,7 @@ export const addProduct = new mongoose.Schema(
         giveOffer: {
             type: Boolean,
             required: true,
-            default : false,
+            default: false,
         },
         offerPercent: {
             type: Number,
@@ -28,6 +29,14 @@ export const addProduct = new mongoose.Schema(
             default: 0,
         },
         productDescription: {
+            type: String,
+            required: true,
+        },
+        Coupon: {
+            type: couponSchema,
+            default: null
+        },
+        category: {
             type: String,
             required: true,
         },
@@ -43,6 +52,10 @@ export const addProduct = new mongoose.Schema(
                 },
             },
         ],
+        shopInfo: {
+            type: Object,
+            required: [true || "User Not Found"],
+        },
         stock: {
             type: String,
             required: true,

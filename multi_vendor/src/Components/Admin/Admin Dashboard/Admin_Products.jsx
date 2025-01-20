@@ -3,6 +3,7 @@ import { FaEye, FaTimes, FaEdit, FaChevronLeft, FaChevronRight, FaTrashAlt } fro
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { RxCrossCircled } from "react-icons/rx";
 import { ContextApi } from "../../../Context/Context.jsx";
+import { categoriesData as categories } from "../../../Static/static.jsx"
 
 const Admin_Products = () => {
   const { getShop, deleteProduct, editProduct } = useContext(ContextApi);
@@ -59,6 +60,7 @@ const Admin_Products = () => {
         productTitle: formData?.productTitle,
         productDescription: formData?.productDescription,
         actualPrice: formData?.actualPrice,
+        category : formData?.category,
         giveOffer: formData?.giveOffer || false,
         offerPercent: formData?.offerPercent || null,
         stock: formData?.stock,
@@ -327,6 +329,7 @@ const Admin_Products = () => {
                       </>
                     )}
                   </p>
+                  <p className="text-gray-600 mb-2">Category: {selectedProduct.category}</p>
                   <p className="text-gray-600 mb-2">Ratings: {selectedProduct.ratings}</p>
                   <p className="text-gray-600 mb-4">Reviews: {selectedProduct.productReviews}</p>
                   <button
@@ -408,6 +411,27 @@ const Admin_Products = () => {
                       <option value={'in stock'}>In Stock</option>
                       <option value={'limited stock'}>Limited Stock</option>
                       <option value={'out of stock'}>Out of Stock</option>
+                    </select>
+                  </div>
+                  <div className="mb-4">
+                    <label className="block font-medium mb-2" htmlFor="category">
+                      Category
+                    </label>
+                    <select
+                      id="category"
+                      name="category"
+                      value={formData.category}
+                      onChange={handleChange}
+                      className="w-full p-3 rounded bg-white text-gray-800 shadow focus:outline-none focus:ring focus:ring-black"
+                    >
+                      <option value="" disabled>
+                        Select a category
+                      </option>
+                      {categories.map((e, index) => (
+                        <option key={index} value={e.title}>
+                          {e.title}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="mb-4 flex items-center">

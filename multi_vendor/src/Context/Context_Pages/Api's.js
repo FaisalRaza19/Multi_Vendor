@@ -1,4 +1,4 @@
-const port = 7777;
+const port = 8000;
 export const api = {
     // user api
     register: `http://localhost:${port}/user/register`,
@@ -28,6 +28,7 @@ export const api = {
     addProducts : `http://localhost:${port}/admin/shop-addProduct`,
     deleteProduct : `http://localhost:${port}/admin/shop-delProduct`,
     editProduct : `http://localhost:${port}/admin/shop-editProduct`,
+    getAllProducts : `http://localhost:${port}/admin/shop-getAllProduct`,
 
     // events
     addEvents : `http://localhost:${port}/admin/shop-addEvent`,

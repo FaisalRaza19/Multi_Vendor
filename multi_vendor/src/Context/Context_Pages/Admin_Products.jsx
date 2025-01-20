@@ -64,6 +64,28 @@ export const deleteProduct = async (productId) => {
     }
 };
 
+// get product
+export const getProduct = async () => {
+    try {
+        const response = await fetch(api.getAllProducts, {
+            method: "GET",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: "include",
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to add product: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Error during adding product:", error.message);
+        throw error;
+    }
+};
 
 // edit product 
 export const editProduct = async (productData) => {

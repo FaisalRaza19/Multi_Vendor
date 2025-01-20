@@ -99,7 +99,7 @@ export const ProductVerifier = ({ productTitle, actualPrice, giveOffer, offerPer
     }
 
     // Verify offer percent
-    if (giveOffer && offerPercent !== undefined && offerPercent < 2 ) {
+    if (giveOffer && offerPercent !== undefined && offerPercent < 2) {
         errors.offerPercent = 'Offer percent must be at least 2%.';
     } else if (giveOffer && offerPercent > 100) {
         errors.offerPercent = 'Offer percent cannot be more than 100%.';
@@ -139,3 +139,27 @@ export const ProductVerifier = ({ productTitle, actualPrice, giveOffer, offerPer
     }
     return Object.keys(errors).length > 0 ? errors : true;
 };
+
+
+export const validateCoupon = ({ code, value, expirationDate }) => {
+    const errors = [];
+    // Validate coupon code
+    if (!code || typeof code !== 'string' || code.trim().length < 5) {
+        errors.push('Coupon code is required and must be a non-empty string.');
+    }
+
+    // Validate discount value
+    if (value === undefined || isNaN(value) || value <= 0 || value >=100) {
+        errors.push('Discount value is required and must be a positive number.');
+    }
+
+    // validate expiration date
+    if (!expirationDate || isNaN(new Date(expirationDate).getTime())) {
+        errors.push('Expiration date is required and must be a valid date.');
+    } else if (new Date(expirationDate) <= new Date()) {
+        errors.push('Expiration date must be in the future.');
+    }
+
+    // Return validation result
+    return errors.length > 0 ? errors : true;
+}
