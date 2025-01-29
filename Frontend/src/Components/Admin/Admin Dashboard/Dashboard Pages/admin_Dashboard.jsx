@@ -2,10 +2,11 @@ import React, { useContext, useEffect, useState } from 'react'
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { ContextApi } from "../../../../Context/Context.jsx"
 import { orders } from '../../../../Static/static.jsx'
-import { Link, useParams } from 'react-router-dom'
+import { Link,useParams } from 'react-router-dom'
 
 const admin_Dashboard = () => {
   const {shopId} = useParams();
+  const [id,setId] = useState(null); 
   const { getShop } = useContext(ContextApi).adminAuth;
   const [data, setData] = useState();
   const [productLength, setProductLength] = useState(0);
@@ -17,6 +18,7 @@ const admin_Dashboard = () => {
       const data = await getShop(shopId);
       setProductLength(data.data.shop.products.length)
       setData(data.data.shop);
+      setId(data.data.shop?._id)
     } catch (error) {
       console.error("Error during fetch shop:", error);
     }
@@ -24,7 +26,7 @@ const admin_Dashboard = () => {
 
   useEffect(() => {
     fetchShop();
-  }, []);
+  }, [shopId]);
   return (
     <div className="p-4 space-y-8 lg:p-7">
       <h1 className="text-2xl font-semibold">Overview</h1>
@@ -57,7 +59,7 @@ const admin_Dashboard = () => {
             <h3 className="text-sm text-gray-600">All Products</h3>
             <p className="text-2xl font-semibold lg:text-3xl">{productLength || 0}</p>
           </div>
-          <Link to="/Shop/products">
+          <Link to={`/Shop/${id}/products`}>
             <button className="mt-4 text-blue-500 hover:underline">
               View Products
             </button>

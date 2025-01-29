@@ -100,10 +100,10 @@ const adminShop_EmailVerify = ({ isAuth }) => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8">
-      <button onClick={() => navigate('/Shop-register')} className="self-start ml-8 mb-4">
+      <button onClick={() => navigate('/Shop-register')} className="self-start mt-0 ml-8 mb-4">
         <FaArrowLeft size={24} />
       </button>
-      <div className="bg-white p-8 rounded shadow-md w-96">
+      <div className="bg-white p-8 rounded shadow-md w-96 mt-32">
         <h2 className="text-2xl font-bold mb-4 text-center">OTP Verification</h2>
         <p className="text-gray-600 text-sm text-center mb-6">
           Please enter the 6-digit code sent to your email.
