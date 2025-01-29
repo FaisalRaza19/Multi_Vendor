@@ -1,4 +1,4 @@
-import { User } from "../../Models/user.model.js";
+import { User } from "../../Models/User Models/user.model.js";
 import bcryptjs from "bcryptjs";
 import jsonWebToken from "jsonwebtoken";
 import { InputVerifier } from "../../utils/InputVerifier.js"
@@ -17,7 +17,7 @@ const getUserInfo = async (req, res) => {
         // validate input 
         const validationResult = InputVerifier(req.body);
         if (validationResult !== true) {
-            return res.status(400).json({ message: "Invalid input", errors: validationResult });
+            return res.status(400).json({ message : validationResult || "Invalid Input" });
         }
 
         // check email is in use 
@@ -36,10 +36,10 @@ const getUserInfo = async (req, res) => {
         req.session.verificationCode = verificationCode;
         req.session.userData = req.body;
 
-        return res.status(200).json({ message: "Verification code sent to your email. Please verify." });
+        return res.status(200).json({status : 200, message: "Verification code sent to your email. Please verify." });
     } catch (error) {
         console.error("Error in getUserInfo:", error);
-        return res.status(500).json({ statusCode: 200, message: "Error during registration.", error: error.message });
+        return res.status(500).json({ statusCode: 500, message: "Error during registration.", error: error.message });
     }
 };
 
@@ -53,12 +53,13 @@ const resendVerificationCode = async (req, res) => {
 
         // resend email  
         const verificationCode = await sendEmail(userData.email);
+        console.log(verificationCode)
         req.session.verificationCode = verificationCode;
 
-        return res.status(200).json({ message: "New verification code sent to your email." });
+        return res.status(200).json({status : 200, message: "New verification code sent to your email." });
     } catch (error) {
         console.error("Error in resendVerificationCode:", error);
-        return res.status(500).json({ message: "Error while resending verification code.", error: error.message });
+        return res.status(500).json({message: "Error while resending verification code.", error: error.message });
     }
 };
 
@@ -100,13 +101,13 @@ const registerUser = async (req, res) => {
 
         // create tokens 
         const refreshToken = jsonWebToken.sign(
-            { id: newUser._id },
+            { userId: newUser._id },
             process.env.REFRESH_TOKEN_SECRET,
             { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
         );
 
         const accessToken = jsonWebToken.sign(
-            { id: newUser._id },
+            { userId: newUser._id },
             process.env.ACCESS_TOKEN_SECRET,
             { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
         );
@@ -120,9 +121,9 @@ const registerUser = async (req, res) => {
         req.session.userData = null;
 
         return res.status(200).json({
+            status : 200,
             message: "User created successfully.",
-            data: checkUser,
-            accessToken,
+            data: { checkUser, accessToken }
         });
     } catch (error) {
         console.error("Error in registerUser:", error);
@@ -157,13 +158,13 @@ const login = async (req, res) => {
 
         // Generate tokens
         const refreshToken = jsonWebToken.sign(
-            { id: user._id },
+            { userId: user._id },
             process.env.REFRESH_TOKEN_SECRET,
             { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
         );
 
         const accessToken = jsonWebToken.sign(
-            { id: user._id },
+            { userId: user._id },
             process.env.ACCESS_TOKEN_SECRET,
             { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
         );
@@ -179,7 +180,7 @@ const login = async (req, res) => {
         }
 
         // Return success response
-        return res.status(200).json({ statusCode: 200, message: "User logged in successfully.", data: { loggedInUser, accessToken } });
+        return res.status(200).json({ status: 200, message: "User logged in successfully.", data: { loggedInUser, accessToken } });
     } catch (error) {
         console.error("Error logging in the user:", error);
         return res.status(500).json({
@@ -203,7 +204,7 @@ const logOut = async (req, res) => {
         res.clearCookie("accessToken");
         res.clearCookie("refreshToken")
 
-        return res.status(200).json({ statusCode: 200, message: "User logOut Successfully" })
+        return res.status(200).json({status : 200, message: "User logOut Successfully" })
 
     } catch (error) {
         console.log("Something went wrong to logOut the user", error)
@@ -213,15 +214,17 @@ const logOut = async (req, res) => {
 // login is required  update avatar;
 const updateAvatar = async (req, res) => {
     try {
-        const userId = req.user._id;
+        const userId = req.user?._id;
+        if (!userId) {
+            return res.status(400).json({ message: "User did not found" })
+        };
 
-        // check if avatar file is provided
+        // Check if shopLogo file is provided
         if (!req.files || !req.files.avatar || req.files.avatar.length === 0) {
             return res.status(400).json({ message: "Avatar file is required" });
         }
 
-        // get avatar file path from req.files
-        const avatarPath = req.files.avatar[0].path;
+        const avatarPath = req.files.avatar[0].path
 
         // check if the user exists
         const user = await User.findById(userId).select("-password -refreshToken");
@@ -246,7 +249,7 @@ const updateAvatar = async (req, res) => {
         });
 
         return res.status(200).json({
-            statusCode: 200,
+            status : 200,
             data: fileUpload.url,
             message: "Avatar updated successfully"
         });
@@ -301,7 +304,7 @@ const editProfile = async (req, res) => {
             }
             req.session.verificationCode = verificationCode;
             req.session.userData = req.body;
-            return res.status(200).json({ message: "Verification code sent to your email. Please verify." });
+            return res.status(200).json({status : 200, message: "Verification code sent to your email. Please verify." });
         }
         const updatedUser = await User.findByIdAndUpdate(
             userId,
@@ -317,7 +320,7 @@ const editProfile = async (req, res) => {
             return res.status(500).json({ message: "Failed to update profile. Please try again." });
         }
 
-        return res.status(200).json({ message: "Profile updated successfully", data: updatedUser });
+        return res.status(200).json({status : 200, message: "Profile updated successfully", data: updatedUser });
 
     } catch (error) {
         return res.status(500).json({ message: "An error occurred while updating the profile.", error: error.message });
@@ -368,7 +371,7 @@ const updateProfile = async (req, res) => {
         req.session.verificationCode = null;
         req.session.userData = null;
 
-        return res.status(200).json({ message: "Profile updated successfully", data: updatedUser });
+        return res.status(200).json({status : 200, message: "Profile updated successfully", data: updatedUser });
     } catch (error) {
         console.error("Error in updateProfile:", error);
         return res.status(500).json({ message: "An error occurred while updating the profile.", error: error.message });
@@ -385,7 +388,7 @@ const getUser = async (req, res) => {
             return res.status(400).json({ message: "User did not exist" })
         };
 
-        return res.status(200).json({ statusCode: 200, data: user, message: "User get Successfully" })
+        return res.status(200).json({status : 200, data: user, message: "User get Successfully" })
 
     } catch (error) {
         console.log("something went wrong to get the user", error);
@@ -394,17 +397,16 @@ const getUser = async (req, res) => {
 
 const userVerifyJWT = async (req, res) => {
     try {
-        const userId = req.user._id;
+        const userId = req.user?._id;
         if (!userId) {
             return res.status(400).json({ message: "User did not found" })
         };
-        return res.status(200).json({ status: 200, message: "token is valid" })
+        return res.status(200).json({ status : 200, message: "token is valid", data: true })
     } catch (error) {
         return res.status(500).json({ message: "internal server error to verify and edit the shop", error: error })
     }
 }
 
 export {
-    getUserInfo, resendVerificationCode, editProfile, registerUser, updateProfile, login, logOut,
-    getUser, updateAvatar, userVerifyJWT
+    getUserInfo, resendVerificationCode, editProfile, registerUser, updateProfile, login, logOut, getUser, updateAvatar, userVerifyJWT
 };

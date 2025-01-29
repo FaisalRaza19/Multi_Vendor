@@ -8,77 +8,79 @@ export const InputVerifier = (data) => {
     // Verify full name
     if (fullName !== undefined) {
         if (!fullName || fullName.trim() === '' || fullName.length < 3) {
-            errors.fullName = 'Full name is required and must be at least 3 characters.';
+            errors.message = 'Full name is required and must be at least 3 characters.';
         }
     }
 
     // Verify email
     if (email !== undefined) {
         if (!email || !/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
-            errors.email = 'Invalid email format.';
+            errors.message = 'Invalid email format.';
         }
     }
 
-    // Verify password
+    // verify password
     if (password !== undefined) {
         if (!password || password.length < 8) {
-            errors.password = 'Password must be at least 8 characters.';
+            errors.message = 'Password must be at least 8 characters.';
+        } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+            errors.message = 'Password must include at least one special character.';
         }
-    }
+    }    
 
     // Verify username
     if (userName !== undefined) {
         if (!userName || userName.trim() === '' || userName.length < 8) {
-            errors.userName = 'Username is required and must be at least 8 characters.';
+            errors.message = 'Username is required and must be at least 8 characters.';
         }
     }
 
     // Verify shop name
     if (shopName !== undefined) {
         if (!shopName || shopName.trim() === '' || shopName.length < 3) {
-            errors.shopName = 'Shop name is required and must be at least 3 characters.';
+            errors.message = 'Shop name is required and must be at least 3 characters.';
         }
     }
 
     // Verify shop description
     if (shopDescription !== undefined) {
         if (!shopDescription || shopDescription.length < 20) {
-            errors.shopDescription = 'Shop description must be at least 20 characters.';
+            errors.message = 'Shop description must be at least 20 characters.';
         }
     }
 
     // Verify phone number
     if (phoneNumber !== undefined) {
         if (!phoneNumber || !isValidPhoneNumber(phoneNumber)) {
-            errors.phoneNumber = 'Invalid phone number.';
+            errors.message = 'Invalid phone number.';
         }
     }
 
     // Verify address details
     if (homeAddress !== undefined) {
         if (!homeAddress || homeAddress.trim() === '' || homeAddress.length < 8) {
-            errors.homeAddress = 'Home address is required and must be at least 8 characters.';
+            errors.message = 'Home address is required and must be at least 8 characters.';
         }
     }
 
     if (country !== undefined) {
         if (!country || !Country.getAllCountries().find((c) => c.name.toLowerCase() === country.toLowerCase())) {
-            errors.country = 'Invalid country.';
+            errors.message = 'Invalid country.';
         } else if (!state || !State.getStatesOfCountry(Country.getAllCountries().find((c) => c.name.toLowerCase() === country.toLowerCase()).isoCode)
             .find((s) => s.name.toLowerCase() === state.toLowerCase())) {
-            errors.state = `Invalid state for the country ${country}.`;
+            errors.message = `Invalid state for the country ${country}.`;
         } else if (!city || !City.getCitiesOfState(
             Country.getAllCountries().find((c) => c.name.toLowerCase() === country.toLowerCase()).isoCode,
             State.getStatesOfCountry(Country.getAllCountries().find((c) => c.name.toLowerCase() === country.toLowerCase()).isoCode)
                 .find((s) => s.name.toLowerCase() === state.toLowerCase()).isoCode)
             .find((ci) => ci.name.toLowerCase() === city.toLowerCase())) {
-            errors.city = `Invalid city for the state ${state}.`;
+            errors.message= `Invalid city for the state ${state}.`;
         }
     }
 
     if (zipCode !== undefined) {
         if (!zipCode || zipCode.trim() === '' || !/^[0-9]+$/.test(zipCode)) {
-            errors.zipCode = 'Zip code is required and must be numeric.';
+            errors.message = 'Zip code is required and must be numeric.';
         }
     }
 

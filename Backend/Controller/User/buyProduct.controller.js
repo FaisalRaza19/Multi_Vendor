@@ -1,5 +1,5 @@
 import { Shops } from "../../Models/Admin.model.js";
-import { User } from "../../Models/user.model.js";
+import { User } from "../../Models/User Models/user.model.js";
 
 // Handle checkout for multiple items in the cart
 const createOrder = async (req, res) => {

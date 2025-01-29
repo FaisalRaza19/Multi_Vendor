@@ -58,8 +58,8 @@ const addProduct = async (req, res) => {
             category,
             stock,
             shopInfo: {
-                shopId : shop._id,
-                shopName : shop.shopName,
+                shopId: shop._id,
+                shopName: shop.shopName,
             },
             images,
             giveOffer: giveOffer === "true" ? true : false,
@@ -70,7 +70,7 @@ const addProduct = async (req, res) => {
         shop.products.push(newProduct)
         await shop.save();
 
-        return res.status(201).json({ message: "Product added successfully.", product: newProduct });
+        return res.status(201).json({status : 200, message: "Product added successfully.", product: newProduct });
 
     } catch (error) {
         console.error("Error adding product:", error);
@@ -81,13 +81,13 @@ const addProduct = async (req, res) => {
 // get product through :id
 const getProduct = async (req, res) => {
     try {
-        const { productId } = req.body;
+        const { productId } = req.params;
         if (!productId) {
             return res.status(400).json({ message: "Product ID is required." });
         }
 
         // Find the shop that contains the product by productId
-        const shop = await Shops.findOne({"products._id" : productId}).select("-password -refreshToken");
+        const shop = await Shops.findOne({ "products._id": productId }).select("-password -refreshToken");
 
         if (!shop) {
             return res.status(404).json({ message: "Product not found." });
@@ -101,7 +101,7 @@ const getProduct = async (req, res) => {
         }
 
         // Return the product
-        return res.status(200).json({ message: "Product retrieved successfully.", product });
+        return res.status(200).json({status : 200,  message: "Product retrieved successfully.", product });
     } catch (error) {
         console.error("Error getting product:", error);
         return res.status(500).json({ message: "Something went wrong while retrieving the product.", error });
@@ -111,27 +111,22 @@ const getProduct = async (req, res) => {
 // get all products present in shop collection in mongo db products 
 const get_allProduct = async (req, res) => {
     try {
-        // Fetch all shops
+        // Fetch all shops and retrieve only the `products` field
         const shops = await Shops.find({}, { products: 1, _id: 0 });
 
-        // Extract all products from the `products` array in each shop
+        // Flatten the `products` arrays from all shops
         const allProducts = shops.flatMap((shop) => shop.products || []);
 
+        // Check if there are any products
         if (allProducts.length === 0) {
-            return res.status(404).json({ message: "No products found in any shop." });
+            return res.status(404).json([]);
         }
 
-        // Return the combined list of products
-        return res.status(200).json({
-            message: "Products retrieved successfully.",
-            products: allProducts,
-        });
+        // Return the array of products
+        return res.status(200).json({status : 200, message : "Product retrived successfully", allProducts});
     } catch (error) {
         console.error("Error getting products:", error);
-        return res.status(500).json({
-            message: "Something went wrong while retrieving the products.",
-            error: error.message,
-        });
+        return res.status(500).json([]);
     }
 };
 
@@ -205,11 +200,25 @@ const editProduct = async (req, res) => {
                 ...product.images.filter((img) => retainedIds.includes(img.public_id)),
                 ...uploadedImages,
             ];
+        } else if(!productImages){
+            const retainedIds = req.body.publicId?.map((id) => id) || [];
+            if(retainedIds){
+                const existingIds = product.images.map((img) => img.public_id);
+    
+                // Determine which images to delete
+                const idsToDelete = existingIds.filter((id) => !retainedIds.includes(id));
+                for (const id of idsToDelete) {
+                    await removeFileFromCloudinary(id);
+                }
+            }
+            product.images = [
+                ...product.images.filter((img) => retainedIds.includes(img.public_id))
+            ];
         }
 
         // Save the updated product
         await shop.save();
-        return res.status(200).json({ data: product, message: "Product updated successfully" });
+        return res.status(200).json({status : 200, data: product, message: "Product updated successfully" });
     } catch (error) {
         console.error("Error editing product:", error);
         return res.status(500).json({ message: "Something went wrong.", error: error.message });
@@ -251,7 +260,7 @@ const deleteProduct = async (req, res) => {
 
         product.deleteOne(product);
         await shop.save();
-        return res.status(200).json({ message: "Product is delete successfully", data: shop.products });
+        return res.status(200).json({status : 200, message: "Product is delete successfully", data: shop.products });
     } catch (error) {
         console.error("Error to delete product:", error);
         return res.status(500).json({ message: "Something went wrong while delete the product.", error });

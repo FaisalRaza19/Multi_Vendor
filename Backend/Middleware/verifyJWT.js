@@ -1,5 +1,5 @@
 import JWT from "jsonwebtoken";
-import { User } from "../Models/user.model.js";
+import { User } from "../Models/User Models/user.model.js";
 import {Shops} from "../Models/Admin.model.js"
 
 export const verifyJWT = async (req, res, next) => {
@@ -13,7 +13,7 @@ export const verifyJWT = async (req, res, next) => {
         if (!decodedToken) {
             return res.status(403).json({ message: "Token is invalid" });
         }
-        const user = await User.findById(decodedToken.id).select("-password -refreshToken");
+        const user = await User.findById(decodedToken.userId).select("-password -refreshToken");
 
         if (!user) {
             return res.status(401).json({ message: "Unauthorized request, user not found" });
@@ -45,7 +45,7 @@ export const verify_Admin_JWT = async (req, res, next) => {
         if (!decodedToken) {
             return res.status(403).json({ message: "Token is invalid" });
         }
-        const user = await Shops.findById(decodedToken.id).select("-password -refreshToken");
+        const user = await Shops.findById(decodedToken.adminId).select("-password -refreshToken");
 
         if (!user) {
             return res.status(401).json({ message: "Unauthorized request, user not found" });

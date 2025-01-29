@@ -26,9 +26,9 @@ route.route("/shop-EditLogo").post(verify_Admin_JWT, upload.fields([{
 // logOut the shop
 route.route("/shop-logOut").post(verify_Admin_JWT, upload.none(), shopLogOut);
 // get shop witout token but shop id is required
-route.route("/shop-get/:id").get(getShop);
+route.route("/get-shop/:id").get(getShop);
 // get shop witout token but shop id is required
-route.route("/admin-getShop").get(verify_Admin_JWT,upload.none(), admin_getShop);
+route.route("/admin-getShop/:shopId").get(verify_Admin_JWT,admin_getShop);
 // edit the shop
 route.route("/shop-edit").post(verify_Admin_JWT, upload.none(), editShop);
 // verify new edited email
@@ -46,7 +46,7 @@ route.route("/shop-addProduct").post(verify_Admin_JWT, upload.fields([{
 // get all products present in shop collection in mongo db
 route.route("/shop-getAllProduct").get(upload.none(), get_allProduct);
 // get only one product through product :id
-route.route("/shop-getProduct").get(upload.none(), getProduct);
+route.route("/shop-getProduct/:productId").get(getProduct);
 // edit product
 route.route("/shop-editProduct").post(verify_Admin_JWT, upload.fields([{
     name: "productImages",
@@ -71,7 +71,7 @@ route.route("/shop-editEvent").post(verify_Admin_JWT, upload.fields([{
 // get all events of every shop present in shop collection in mongo db
 route.route("/shop-getAllEvent").get(upload.none(), getAllEvent);
 // get only one event through :id
-route.route("/shop-getEvent").get(upload.none(), getEvent);
+route.route("/shop-getEvent/:eventId").get(getEvent);
 // delete event
 route.route("/shop-delEvent").delete(verify_Admin_JWT, upload.none(), deleteEvent);
 

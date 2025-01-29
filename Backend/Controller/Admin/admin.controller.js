@@ -18,7 +18,7 @@ const RegisterShop = async (req, res) => {
         // Validate input fields
         const validationResult = InputVerifier(req.body);
         if (validationResult !== true) {
-            return res.status(400).json({ message: "Invalid input", errors: validationResult });
+            return res.status(400).json({ message: validationResult || "Invalid input" });
         }
 
         // Check if email and phone number already exists
@@ -43,7 +43,7 @@ const RegisterShop = async (req, res) => {
         req.session.code = otpCode;
         req.session.adminData = req.body;
 
-        return res.status(200).json({ message: "Verification code sent to your email. Please verify it." });
+        return res.status(200).json({status :200, message: "Verification code sent to your email. Please verify it." });
     } catch (error) {
         console.error("Error in registerShop:", error);
         return res.status(500).json({ message: "Failed to register shop", error: error.message });
@@ -61,7 +61,7 @@ const resendVerificationCode = async (req, res) => {
         const verificationCode = await sendEmail(adminData.email);
         req.session.code = verificationCode;
 
-        return res.status(200).json({ message: "New verification code sent to your email." });
+        return res.status(200).json({status : 200, message: "New verification code sent to your email." });
     } catch (error) {
         console.error("Error in resendVerificationCode:", error);
         return res.status(500).json({ message: "Error while resending verification code.", error: error.message });
@@ -114,13 +114,13 @@ const verifyAndCreate = async (req, res) => {
 
         // Generate tokens
         const refreshToken = jsonWebToken.sign(
-            { id: newShop._id },
+            { adminId: newShop._id },
             process.env.ADMIN_REFRESH_TOKEN_SECRET,
             { expiresIn: process.env.ADMIN_REFRESH_TOKEN_EXPIRY }
         );
 
         const accessToken = jsonWebToken.sign(
-            { id: newShop._id },
+            { adminId: newShop._id },
             process.env.ADMIN_ACCESS_TOKEN_SECRET,
             { expiresIn: process.env.ADMIN_ACCESS_TOKEN_EXPIRY }
         );
@@ -140,6 +140,7 @@ const verifyAndCreate = async (req, res) => {
         req.session.adminData = null;
 
         return res.status(200).json({
+            status : 200,
             message: "Shop created successfully.",
             data: { createdUser, accessToken }
         });
@@ -176,13 +177,13 @@ const shopLogin = async (req, res) => {
 
         // create tokens 
         const refreshToken = jsonWebToken.sign(
-            { id: user._id },
+            { adminId: user._id },
             process.env.ADMIN_REFRESH_TOKEN_SECRET,
             { expiresIn: process.env.ADMIN_REFRESH_TOKEN_EXPIRY }
         );
 
         const accessToken = jsonWebToken.sign(
-            { id: user._id },
+            { adminId: user._id },
             process.env.ADMIN_ACCESS_TOKEN_SECRET,
             { expiresIn: process.env.ADMIN_ACCESS_TOKEN_EXPIRY }
         );
@@ -196,7 +197,7 @@ const shopLogin = async (req, res) => {
             return res.status(500).json({ message: "An error occurred while logging in." });
         }
 
-        return res.status(200).json({ statusCode: 200, data: { userLogin, accessToken }, message: "user login into the shop Successfully" });
+        return res.status(200).json({ status: 200, data: { userLogin, accessToken }, message: "user login into the shop Successfully" });
     } catch (error) {
         console.error("Error during shop login:", error);
         return res.status(500).json({ message: "internal server error to login the shop", error: error })
@@ -240,7 +241,7 @@ const updateShopLogo = async (req, res) => {
             await shop.save();
 
         return res.status(200).json({
-            statusCode: 200,
+            status: 200,
             data: fileUpload.url,
             message: "Shop logo updated successfully"
         });
@@ -269,7 +270,7 @@ const shopLogOut = async (req, res) => {
         res.clearCookie("accessToken");
         res.clearCookie("refreshToken")
 
-        return res.status(200).json({ statusCode: 200, message: "User logOut to the Shop Successfully" })
+        return res.status(200).json({ status: 200, message: "User logOut to the Shop Successfully" })
     } catch (error) {
         return res.status(500).json({ message: "internal server error to logOut the shop", error: error })
     }
@@ -289,7 +290,7 @@ const getShop = async (req, res) => {
             return res.status(404).json({ message: "User does not exist" });
         }
 
-        return res.status(200).json({ statusCode: 200, data: { shop }, message: "Shop get Successfully" })
+        return res.status(200).json({ status: 200, data: { shop }, message: "Shop get Successfully" })
     } catch (error) {
         return res.status(500).json({ message: "internal server error to get the shop", error: error })
     }
@@ -298,7 +299,7 @@ const getShop = async (req, res) => {
 // get shop with token and id
 const admin_getShop = async (req, res) => {
     try {
-        const { shopId } = req.body;
+        const { shopId } = req.params;
         if (!shopId) {
             return res.status(400).json({ message: "shop did not found" })
         }
@@ -314,7 +315,7 @@ const admin_getShop = async (req, res) => {
             return res.status(404).json({ message: "User does not exist" });
         }
 
-        return res.status(200).json({ statusCode: 200, data: { shop }, message: "Shop get Successfully" })
+        return res.status(200).json({ status: 200, data: { shop }, message: "Shop get Successfully" })
     } catch (error) {
         return res.status(500).json({ message: "internal server error to get the shop", error: error })
     }
@@ -356,7 +357,7 @@ const editShop = async (req, res) => {
 
             req.session.code = otpCode;
             req.session.adminData = req.body
-            return res.status(200).json({ statusCode: 200, message: "OTP send to your new email please verify it." })
+            return res.status(200).json({ status: 200, message: "OTP send to your new email please verify it." })
         }
 
         const editShop = await shop.updateOne({
@@ -375,7 +376,7 @@ const editShop = async (req, res) => {
         if (!editShop) {
             return res.status(500).json({ message: "Failed to update profile. Please try again." });
         }
-        return res.status(200).json({ statusCode: 200, data: { editShop }, message: "Shop edit Successfully" })
+        return res.status(200).json({ status: 200, data: { editShop }, message: "Shop edit Successfully" })
     } catch (error) {
         return res.status(500).json({ message: "internal server error to edit the shop", error: error })
     }
@@ -433,7 +434,7 @@ const verifyAndEdit = async (req, res) => {
         req.session.code = null;
         req.session.adminData = null;
 
-        return res.status(200).json({ statusCode: 200, data: { editShop }, message: "Shop edit Successfully" })
+        return res.status(200).json({ status: 200, data: { editShop }, message: "Shop edit Successfully" })
     } catch (error) {
         return res.status(500).json({ message: "internal server error to verify and edit the shop", error: error })
     }
@@ -442,7 +443,7 @@ const verifyAndEdit = async (req, res) => {
 // verify token
 const verifyJWT = async (req, res) => {
     try {
-        const userId = req.admin._id;
+        const userId = req.admin?._id;
         if (!userId) {
             return res.status(400).json({ message: "User did not found" })
         };

@@ -6,7 +6,7 @@ const upload = multer();
 
 export const review = Router();
 
-review.route("/give-review").post(verifyJWT,upload.none(),giveReview);
+review.route("/give-review/:id").post(verifyJWT,upload.none(),giveReview);
 review.route("/edit-review").post(verifyJWT,upload.none(),editReview);
 review.route("/del-review").delete(verifyJWT,upload.none(),deleteReview);
 review.route("/give-like").post(verifyJWT,upload.none(),giveLike);

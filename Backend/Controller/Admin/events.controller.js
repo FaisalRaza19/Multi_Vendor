@@ -34,13 +34,21 @@ const addEvent = async (req, res) => {
         if (currentDate > eventStartDate || eventEndDate < currentDate || eventEndDate < eventStartDate) {
             return res.status(400).json({ message: "Please select future date" })
         }
+
         // Nullify offer if event is finished
+        let status = "";
         let offerPercentValue;
         let offerPercentPrice;
-        if (eventStartDate < eventEndDate) {
+        if (currentDate < eventStartDate) {
+            status = "Event Start Very Soon"
             offerPercentValue = offerPercent;
             offerPercentPrice = actualPrice - (actualPrice * offerPercent) / 100
-        } else {
+        } else if (currentDate > eventStartDate && eventStartDate < eventEndDate) {
+            status = "Event Start"
+            offerPercentValue = offerPercent;
+            offerPercentPrice = actualPrice - (actualPrice * offerPercent) / 100
+        } else if (eventStartDate && eventEndDate < currentDate) {
+            status = "Event End"
             offerPercentValue = null;
             offerPercentPrice = null;
         }
@@ -77,11 +85,12 @@ const addEvent = async (req, res) => {
             productDescription,
             category,
             shopInfo: {
-                shopId : shop._id,
-                shopName : shop.shopName,
+                shopId: shop._id,
+                shopName: shop.shopName,
             },
             stock,
             images,
+            status,
             eventStart: eventStartDate,
             eventEnd: eventEndDate,
             offerPercent: offerPercentValue || null,
@@ -91,34 +100,65 @@ const addEvent = async (req, res) => {
         shop.events.push(newProduct);
         await shop.save();
 
-        return res.status(201).json({ message: "Product added successfully.", product: newProduct });
+        return res.status(201).json({ status: 200, message: "Event added successfully.", product: newProduct });
     } catch (error) {
         console.error("Error adding product:", error);
-        return res.status(500).json({ message: "Something went wrong while adding the product.", error });
+        return res.status(500).json({ message: "Something went wrong while adding the event.", error });
     }
 };
 
 // get event 
 const getAllEvent = async (req, res) => {
     try {
-        // Fetch all shops
+        // Fetch all shops and their events
         const shops = await Shops.find({}, { events: 1, _id: 0 });
 
-        const allProducts = shops.flatMap((shop) => shop.events || []);
+        let updatedEvents = [];
 
-        if (allProducts.length === 0) {
-            return res.status(404).json({ message: "No products found in any shop." });
+        shops.forEach((shop) => {
+            if (shop.events && shop.events.length > 0) {
+                shop.events.forEach((event) => {
+                    if (event.eventEnd < Date.now() && event.status !== "ended") {
+                        event.offerPrice = null;
+                        event.offerPercent = null;
+                        event.status = "ended";
+                        updatedEvents.push({ shopId: shopInfo?.shopId, eventId: event._id });
+                    }
+                });
+            }
+        });
+
+        // Bulk update the shops with modified events
+        for (const { shopId, eventId } of updatedEvents) {
+            await Shops.updateOne(
+                { _id: shopId, "events._id": eventId },
+                {
+                    $set: {
+                        "events.$.offerPrice": null,
+                        "events.$.offerPercent": null,
+                        "events.$.status": "ended"
+                    }
+                }
+            );
         }
 
-        // Return the combined list of products
+        if (updatedEvents.length === 0) {
+            return res.status(200).json({
+                message: "Events get Successfully",
+                status: 200,
+                allEvents: shops
+            });
+        }
+
         return res.status(200).json({
-            message: "events retrieved successfully.",
-            products: allProducts,
+            status: 200,
+            message: "Expired events updated successfully.",
+            updatedEvents: updatedEvents.length
         });
     } catch (error) {
-        console.error("Error getting products:", error);
+        console.error("Error updating events:", error);
         return res.status(500).json({
-            message: "Something went wrong while retrieving the products.",
+            message: "Something went wrong while updating events.",
             error: error.message,
         });
     }
@@ -127,13 +167,13 @@ const getAllEvent = async (req, res) => {
 // get event:id
 const getEvent = async (req, res) => {
     try {
-        const { eventId } = req.body;
+        const { eventId } = req.params;
         if (!eventId) {
             return res.status(400).json({ message: "event ID is required." });
         }
 
         // Find the shop that contains the product by productId
-        const shop = await Shops.findOne({"events._id":eventId}).select("-password -refreshToken");
+        const shop = await Shops.findOne({ "events._id": eventId }).select("-password -refreshToken");
 
         if (!shop) {
             return res.status(404).json({ message: "event not found." });
@@ -147,7 +187,7 @@ const getEvent = async (req, res) => {
         }
 
         // Return the product
-        return res.status(200).json({ message: "event retrieved successfully.", event });
+        return res.status(200).json({ status: 200, message: "event retrieved successfully.", event });
     } catch (error) {
         console.error("Error getting product:", error);
         return res.status(500).json({ message: "Something went wrong while retrieving the event.", error });
@@ -157,7 +197,7 @@ const getEvent = async (req, res) => {
 // edit product 
 const editEvent = async (req, res) => {
     try {
-        const userId = req.admin._id;
+        const userId = req.admin?._id;
         if (!userId) {
             return res.status(400).json({ message: "User ID not found." });
         }
@@ -166,7 +206,7 @@ const editEvent = async (req, res) => {
         const eventImages = req.files?.eventImages;
 
         // Validate required fields
-        if (!eventId || !productTitle || !actualPrice || !offerPercent || !category || !productDescription || !stock) {
+        if (!eventId || !productTitle || !actualPrice || !offerPercent || !category || !productDescription || !stock || !startDate || !endDate) {
             return res.status(400).json({ message: "All fields are required." });
         }
 
@@ -186,12 +226,19 @@ const editEvent = async (req, res) => {
             return res.status(400).json({ message: "Please select future date" })
         }
         // Nullify offer if event is finished
+        let status = "";
         let offerPercentValue;
         let offerPercentPrice;
-        if (eventStartDate < eventEndDate) {
+        if (currentDate < eventStartDate) {
+            status = "Event Start Very Soon"
             offerPercentValue = offerPercent;
             offerPercentPrice = actualPrice - (actualPrice * offerPercent) / 100
-        } else {
+        } else if (currentDate > eventStartDate && eventStartDate < eventEndDate) {
+            status = "Event Start"
+            offerPercentValue = offerPercent;
+            offerPercentPrice = actualPrice - (actualPrice * offerPercent) / 100
+        } else if (eventStartDate && eventEndDate < currentDate) {
+            status = "Event End"
             offerPercentValue = null;
             offerPercentPrice = null;
         }
@@ -214,6 +261,7 @@ const editEvent = async (req, res) => {
         event.productDescription = productDescription || event.productDescription;
         event.stock = stock || event.stock;
         event.category = category || event.category;
+        event.status = status || event.status
         event.eventStart = eventStartDate,
             event.eventEnd = eventEndDate,
             event.offerPercent = offerPercentValue || null,
@@ -222,12 +270,13 @@ const editEvent = async (req, res) => {
         // Handle product image updates
         if (eventImages && eventImages.length > 0) {
             const retainedIds = req.body.publicId?.map((id) => id) || [];
+            console.log(retainedIds)
             const existingIds = event.images.map((img) => img.public_id);
 
             // Determine which images to delete
             const idsToDelete = existingIds.filter((id) => !retainedIds.includes(id));
             for (const id of idsToDelete) {
-                await removeFileFromCloudinary(id);
+               await removeFileFromCloudinary(id);
             }
 
             // Upload new images
@@ -247,15 +296,28 @@ const editEvent = async (req, res) => {
                 ...event.images.filter((img) => retainedIds.includes(img.public_id)),
                 ...uploadedImages,
             ];
+        }else if(!eventImages){
+            const retainedIds = req.body.publicId?.map((id) => id) || [];
+            console.log(retainedIds)
+            const existingIds = event.images.map((img) => img.public_id);
+
+            // Determine which images to delete
+            const idsToDelete = existingIds.filter((id) => !retainedIds.includes(id));
+            for (const id of idsToDelete) {
+               await removeFileFromCloudinary(id);
+            }
+            event.images = [
+                ...event.images.filter((img) => retainedIds.includes(img.public_id))
+            ];
         }
 
         // Save the updated product
         await shop.save();
 
         return res.status(200).json({
-            statusCode: 200,
+            status: 200,
             data: event,
-            message: "Product updated successfully",
+            message: "Event updated successfully",
         });
     } catch (error) {
         console.error("Error editing product:", error);
@@ -298,7 +360,7 @@ const deleteEvent = async (req, res) => {
 
         event.deleteOne(event);
         await shop.save();
-        return res.status(200).json({ message: "Product is delete successfully", data: shop.events });
+        return res.status(200).json({ status: 200, message: "Event is delete successfully", data: shop.events });
     } catch (error) {
         console.error("Error to delete product:", error);
         return res.status(500).json({ message: "Something went wrong while delete the product.", error });

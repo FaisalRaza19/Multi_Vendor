@@ -34,6 +34,9 @@ export const admin_events = new mongoose.Schema(
             type: String,
             required: true,
         },
+        status : {
+            type : String,
+        },
         images: [
             {
                 public_id: {

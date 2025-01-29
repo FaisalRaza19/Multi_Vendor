@@ -1,4 +1,4 @@
-import { User } from "../../Models/user.model.js";
+import { User } from "../../Models/User Models/user.model.js";
 import { Shops } from "../../Models/Admin.model.js"
 
 // give review 
@@ -8,38 +8,52 @@ const giveReview = async (req, res) => {
         if (!userId) {
             return res.status(400).json({ message: "User not found" });
         }
-        const { productId, message } = req.body;
-        if (!productId || !message) {
-            return res.status(400).json({ message: "productId and message are required" });
-        }
-        // Check message length
+
+        const { id } = req.params;
+        const { message } = req.body;
+
+        // verify message length
         if (message.length < 3 || message.length > 300) {
             return res.status(400).json({ message: "Message must be between 3 and 300 characters" });
         }
 
-        // Fetch user and shop
+        // Fetch the user and shop data
         const [user, shop] = await Promise.all([
             User.findById(userId).select("-password -refreshToken"),
-            Shops.findOne({ "products._id": productId }),
+            Shops.findOne({ $or: [{ "products._id": id }, { "events._id": id }] }),
         ]);
 
-        // Check user and shop
+        // Check if user and shop exist
         if (!user) {
             return res.status(404).json({ message: "User not found." });
         }
         if (!shop) {
-            return res.status(404).json({ message: "Shop not found" });
+            return res.status(404).json({ message: "Shop not found." });
         }
 
-        // Find the product
-        const product = shop.products.find((e) => e?._id.toString() === productId);
-        if (!product) {
-            return res.status(404).json({ message: "Product not found within the shop." });
+        let item = null;
+        let isEvent = false;
+
+        // Check if id belongs to an event or product
+        if (shop.events.some(event => event._id.toString() === id)) {
+            item = shop.events.find((e) => e._id.toString() === id);
+            isEvent = true;
+        } else if (shop.products.some(product => product._id.toString() === id)) {
+            item = shop.products.find((e) => e._id.toString() === id);
+        }
+
+        // If the item was not found
+        if (!item) {
+            return res.status(404).json({ message: "Item (product/event) not found within the shop." });
         }
 
         // Create the review object
         const review = {
-            userId: user._id,
+            user: {
+                userId : user._id,
+                userName: user.userName,
+                avatar: user.avatar?.url,
+            },
             message: message,
             likes: {
                 userId: [],
@@ -51,8 +65,13 @@ const giveReview = async (req, res) => {
             }
         };
 
-        // Add the review to the product's reviews
-        product.productReviews.push(review);
+        // add review 
+        if (isEvent) {
+            item.productReviews.push(review); 
+        } else {
+            item.productReviews.push(review);
+        }
+
         await shop.save();
 
         return res.status(200).json({
@@ -124,7 +143,7 @@ const deleteReview = async (req, res) => {
         if (!userId) {
             return res.status(400).json({ message: "User not found" });
         }
-        const { productId} = req.body;
+        const { productId } = req.body;
         if (!productId) {
             return res.status(400).json({ message: "productId and message are required" });
         }

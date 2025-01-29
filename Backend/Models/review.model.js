@@ -2,9 +2,8 @@ import mongoose, { Schema } from "mongoose";
 
 export const productReview = new mongoose.Schema(
     {
-        userId: {
-            type: Schema.Types.ObjectId,
-            ref: "User",
+        user: {
+            type: Object,
             required: true,
         },
         message: {
