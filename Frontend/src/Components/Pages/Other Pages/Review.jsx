@@ -7,7 +7,9 @@ import { ContextApi } from "../../../Context/Context";
 
 const Review = () => {
     const { id } = useParams();
+    const { showAlert } = useContext(ContextApi);
     const { fetchProductById } = useContext(ContextApi).adminProducts;
+    const { fetchEventById } = useContext(ContextApi).adminEvents;
     const { addReview, delReview, editReview, giveLike, giveUnLike } = useContext(ContextApi).userReviews;
     const [reviews, setReviews] = useState([]);
     const [currentUserId, setCurrentUserId] = useState(null);
@@ -36,8 +38,15 @@ const Review = () => {
             setLoading(true);
             const userId = getCurrentUserId();
             if (userId) setCurrentUserId(userId);
-            const data = await fetchProductById({productId : id});
-            setReviews(data.product?.productReviews || []);
+            let data = await fetchProductById({ productId: id });
+            if (data.status == 200) {
+                setReviews(data.product?.productReviews || []);
+            } else if (data.message === "Product not found.") {
+                data = await fetchEventById({ eventId: id })
+                setReviews(data.event?.productReviews || []);
+            } else {
+                showAlert(data);
+            }
         } catch (error) {
             console.error("Error fetching reviews:", error);
         } finally {
@@ -54,8 +63,14 @@ const Review = () => {
         try {
             setLoading(true);
             const response = await addReview({ id, message });
+            if (response.status !== 200) {
+                setMessage("");
+                return showAlert(response);
+            }
+            fetchProduct();
             setReviews((prev) => [response.review, ...prev]);
             setMessage("");
+            if (!response || response.error) fetchProduct();
         } catch (error) {
             console.error("Error adding review:", error);
         } finally {
@@ -68,7 +83,11 @@ const Review = () => {
         if (!editingReview) return;
         try {
             setLoading(true);
-            const data = await editReview({ id, messageId: editingReview._id, message: editedMessage, });
+            const data = await editReview({ id, messageId: editingReview?._id, message: editedMessage, });
+            if (data.status !== 200) {
+                return showAlert(data);
+            }
+            fetchProduct();
             setReviews((prev) => prev.map((e) => e._id === editingReview._id ? { ...editingReview, message: editedMessage } : e));
             if (!data || data.error) fetchProduct();
         } catch (error) {
@@ -85,7 +104,7 @@ const Review = () => {
         try {
             setLoading(true);
             const data = await delReview({ id, messageId });
-            setReviews((prev) => prev.filter((e) => e._id !== messageId));
+            setReviews((prev) => prev.filter((e) => e?._id !== messageId));
             if (!data || data.error) fetchProduct();
         } catch (error) {
             fetchProduct();
@@ -232,7 +251,7 @@ const Review = () => {
                         </div>
                     ) : finalReviews.length > 0 ? (
                         finalReviews.slice(0, visibleReviews).map((review) => (
-                            <div key={review._id} className="bg-gray-50 rounded-lg p-4 shadow transition duration-300 hover:shadow-md relative">
+                            <div key={review?._id} className="bg-gray-50 rounded-lg p-4 shadow transition duration-300 hover:shadow-md relative">
                                 <div className="flex items-start">
                                     <img src={review?.user?.avatar || "/public/pic.jpg"} className="w-10 h-10 rounded-full mr-4" />
                                     <div className="flex-grow">

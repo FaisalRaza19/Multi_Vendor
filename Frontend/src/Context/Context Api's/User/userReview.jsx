@@ -95,7 +95,6 @@ export const giveLike = async ({ id, messageId}) => {
         }
 
         const data = await response.json();
-        console.log(data)
         return data;
     } catch (error) {
         return error.message
@@ -121,7 +120,6 @@ export const giveUnLike = async ({ id, messageId}) => {
         }
 
         const data = await response.json();
-        console.log(data)
         return data;
     } catch (error) {
         return error.message

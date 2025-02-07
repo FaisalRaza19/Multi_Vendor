@@ -105,7 +105,7 @@ const editReview = async (req, res) => {
         // Fetch user and shop
         const [user, shop] = await Promise.all([
             User.findById(userId).select("-password -refreshToken"),
-            Shops.findOne({ "products._id": id }),
+            Shops.findOne({ $or: [{ "products._id": id }, { "events._id": id }] }),
         ]);
 
         // Check user and shop
@@ -116,19 +116,33 @@ const editReview = async (req, res) => {
             return res.status(404).json({ message: "Shop not found" });
         }
 
-        // Find the product
-        const product = shop.products.find((e) => e?._id.toString() === id);
-        if (!product) {
-            return res.status(404).json({ message: "Product not found within the shop." });
+        let item = null;
+        let isEvent = false;
+
+        // Check if id belongs to an event or product
+        if (shop.events.some(event => event._id.toString() === id)) {
+            item = shop.events.find((e) => e._id.toString() === id);
+            isEvent = true;
+        } else if (shop.products.some(product => product._id.toString() === id)) {
+            item = shop.products.find((e) => e._id.toString() === id);
+        }
+
+        // If the item was not found
+        if (!item) {
+            return res.status(404).json({ message: "Item (product/event) not found within the shop." });
         }
 
         // find message 
-        const findMessage = product.productReviews.find((e) => e?._id.equals(messageId));
+        const findMessage = item?.productReviews.find((e) => e._id.equals(messageId));
         if (!findMessage) {
             return res.status(404).json({ message: "Review not found for this user." });
         }
         // update message 
-        findMessage.message = message;
+        if (isEvent) {
+            findMessage.message = message;
+        } else {
+            findMessage.message = message;
+        }
         await shop.save();
 
         return res.status(200).json({ status: 200, message: "message update successfully", data: findMessage });
@@ -154,7 +168,7 @@ const deleteReview = async (req, res) => {
         // Fetch user and shop
         const [user, shop] = await Promise.all([
             User.findById(userId).select("-password -refreshToken"),
-            Shops.findOne({ "products._id": id }),
+            Shops.findOne({ $or: [{ "products._id": id }, { "events._id": id }] }),
         ]);
 
         // Check user and shop
@@ -165,21 +179,37 @@ const deleteReview = async (req, res) => {
             return res.status(404).json({ message: "Shop not found" });
         }
 
-        // Find the product
-        const product = shop.products.find((e) => e?._id.toString() === id);
-        if (!product) {
-            return res.status(404).json({ message: "Product not found within the shop." });
+        let item = null;
+        let isEvent = false;
+
+        // Check if id belongs to an event or product
+        if (shop.events.some(event => event._id.toString() === id)) {
+            item = shop.events.find((e) => e._id.toString() === id);
+            isEvent = true;
+        } else if (shop.products.some(product => product._id.toString() === id)) {
+            item = shop.products.find((e) => e._id.toString() === id);
         }
 
-        const findMessage = product.productReviews.find((e) => e?._id.equals(messageId));
+        // If the item was not found
+        if (!item) {
+            return res.status(404).json({ message: "Item (product/event) not found within the shop." });
+        }
+
+        // find message 
+        const findMessage = item?.productReviews.find((e) => e._id.equals(messageId));
         if (!findMessage) {
             return res.status(404).json({ message: "Review not found for this user." });
         }
 
-        findMessage.deleteOne(findMessage);
+        if (isEvent) {
+            findMessage.deleteOne(findMessage);
+        } else {
+            findMessage.deleteOne(findMessage);
+
+        }
         await shop.save();
 
-        return res.status(200).json({ status: 200, message: "Message delete successfully", data: product.productReviews });
+        return res.status(200).json({ status: 200, message: "Message delete successfully", data: item.productReviews });
     } catch (error) {
         console.error("Error edit review:", error);
         return res.status(500).json({ message: "Internal server error while edit the review." });
@@ -196,15 +226,15 @@ const giveLike = async (req, res) => {
 
         // Get and check productId and messageId
         const { id } = req.params;
-        const {messageId} = req.body;
+        const { messageId } = req.body;
         if (!id || !messageId) {
             return res.status(400).json({ message: "productId and messageId are required" });
         }
 
-        // Get user and shop
+        // Fetch user and shop
         const [user, shop] = await Promise.all([
             User.findById(userId).select("-password -refreshToken"),
-            Shops.findOne({ "products._id": id })
+            Shops.findOne({ $or: [{ "products._id": id }, { "events._id": id }] }),
         ]);
 
         // Check if user and shop exist
@@ -215,16 +245,26 @@ const giveLike = async (req, res) => {
             return res.status(404).json({ message: "Shop not found" });
         }
 
-        // Find the product in the shop
-        const product = shop.products.find(e => e?._id.toString() === id);
-        if (!product) {
-            return res.status(404).json({ message: "Product not found within the shop." });
+        let item = null;
+        let isEvent = false;
+
+        // Check if id belongs to an event or product
+        if (shop.events.some(event => event._id.toString() === id)) {
+            item = shop.events.find((e) => e._id.toString() === id);
+            isEvent = true;
+        } else if (shop.products.some(product => product._id.toString() === id)) {
+            item = shop.products.find((e) => e._id.toString() === id);
         }
 
-        // Find the message 
-        const message = product.productReviews.find(e => e?._id.toString() === messageId);
+        // If the item was not found
+        if (!item) {
+            return res.status(404).json({ message: "Item (product/event) not found within the shop." });
+        }
+
+        // find message 
+        const message = item?.productReviews.find((e) => e._id.equals(messageId));
         if (!message) {
-            return res.status(404).json({ message: "Message not found" });
+            return res.status(404).json({ message: "Review not found for this user." });
         }
 
         // Check if the user has already liked or disliked this message
@@ -268,16 +308,16 @@ const giveUnLike = async (req, res) => {
         }
 
         // Get and check productId and messageId
-        const { id} = req.params;
-        const {messageId} = req.body;
+        const { id } = req.params;
+        const { messageId } = req.body;
         if (!id || !messageId) {
             return res.status(400).json({ message: "productId and messageId are required" });
         }
 
-        // Get user and shop
+        // Fetch user and shop
         const [user, shop] = await Promise.all([
             User.findById(userId).select("-password -refreshToken"),
-            Shops.findOne({ "products._id": id })
+            Shops.findOne({ $or: [{ "products._id": id }, { "events._id": id }] }),
         ]);
 
         // Check if user and shop exist
@@ -288,16 +328,26 @@ const giveUnLike = async (req, res) => {
             return res.status(404).json({ message: "Shop not found" });
         }
 
-        // Find the product in the shop
-        const product = shop.products.find(e => e?._id.toString() === id);
-        if (!product) {
-            return res.status(404).json({ message: "Product not found within the shop." });
+        let item = null;
+        let isEvent = false;
+
+        // Check if id belongs to an event or product
+        if (shop.events.some(event => event._id.toString() === id)) {
+            item = shop.events.find((e) => e._id.toString() === id);
+            isEvent = true;
+        } else if (shop.products.some(product => product._id.toString() === id)) {
+            item = shop.products.find((e) => e._id.toString() === id);
         }
 
-        // Find the message 
-        const message = product.productReviews.find(e => e?._id.toString() === messageId);
+        // If the item was not found
+        if (!item) {
+            return res.status(404).json({ message: "Item (product/event) not found within the shop." });
+        }
+
+        // find message 
+        const message = item?.productReviews.find((e) => e._id.equals(messageId));
         if (!message) {
-            return res.status(404).json({ message: "Message not found" });
+            return res.status(404).json({ message: "Review not found for this user." });
         }
 
         // Check if the user has already liked or disliked this message

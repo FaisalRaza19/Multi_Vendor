@@ -155,7 +155,7 @@ const SuggestedItems = () => {
                         <div ref={eventsScrollRef} className="flex overflow-x-auto space-x-4 pb-4 scrollbar-hide">
                             {events.map((event) => (
                                 <div key={event?._id} className="flex-none w-72 bg-white rounded-lg shadow-md">
-                                    <Link to={`/event/${e?.category?.replace(/\s+/g, "-")}/${e._id}`}>
+                                    <Link to={`/event/${event?.category?.replace(/\s+/g, "-")}/${event._id}`}>
                                         <img src={event?.images[0]?.url || "/placeholder.svg"} className="w-full h-40 object-contain rounded-lg" />
                                     </Link>
                                     <div className="p-4">
