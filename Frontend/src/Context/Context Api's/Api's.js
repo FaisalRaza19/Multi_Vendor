@@ -44,4 +44,11 @@ export const api = {
     // coupons
     createCoupon : `http://localhost:${port}/admin/create-copoun`,
     deleteCoupon : `http://localhost:${port}/admin/delete-copoun`,
+
+    // reviews
+    giveReview : `http://localhost:${port}/review/give-review`,
+    delReview : `http://localhost:${port}/review/del-review`,
+    editReview : `http://localhost:${port}/review/edit-review`,
+    giveLike : `http://localhost:${port}/review/give-like`,
+    giveUnLike : `http://localhost:${port}/review//give-un-like`
 };

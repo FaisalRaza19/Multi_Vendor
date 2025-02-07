@@ -8,6 +8,7 @@ import Product from "./Components/Pages/Main Pages/Products/products.jsx";
 import Events from "./Components/Pages/Main Pages/Events/Events.jsx";
 import FAQ from "./Components/Pages/Main Pages/FAQ/FAQ.jsx";
 import Footer from "./Components/Pages/Fixed Pages/Footer.jsx";
+import Admin_Shop from "./Components/Pages/Other Pages/admin_Shop.jsx";
 // user auth
 import SignUp from "./Components/User/userAuth/userSignUp.jsx";
 import EmailVerify from "./Components/User/userAuth/emailVerify.jsx";
@@ -24,6 +25,8 @@ import AdminProfileEmailVerify from "./Components/Admin/Admin_Auth/adminProfile_
 
 import { ContextApi } from "./Context/Context.jsx";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import ShowProduct from "./Components/Pages/Other Pages/ShowProduct.jsx";
+import ShowEvent from "./Components/Pages/Other Pages/ShowEvent.jsx";
 
 function App() {
   const { verifyJWT } = useContext(ContextApi).userAuth;
@@ -32,8 +35,11 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [shopAuth, setShopAuth] = useState(false);
   const authPage = useLocation();
-  const isAuthPage = ["/login", "/signUp", "/emailVerify", "/Shop-register", "/Shop-login","/admin-VerifyProfile", "/verifyProfile", "/Shop-emailVerify"].includes(authPage.pathname);
-  const isShop = authPage.pathname.startsWith("/Shop");
+  const isAuthPage = ["/login", "/signUp", "/emailVerify", "/Shop-register", "/Shop-login","/admin-VerifyProfile", "/verifyProfile", 
+    "/Shop-emailVerify"].includes(authPage.pathname);
+  
+  const isShop = ["/Shop", "/admin_Shop"].some(e => authPage.pathname.startsWith(e));
+
 
   const getId = () => {
     const token = localStorage.getItem("admin_token")
@@ -83,8 +89,12 @@ function App() {
         {/* General Pages */}
         <Route path="/" element={<Home />} />
         <Route path="/products" element={<Product />} />
+        <Route path="/product/:category/:id" element={<ShowProduct/>}/>
+        {/* get shop */}
+        <Route path="/admin_Shop/:shopId" element={<Admin_Shop/>}/>
         <Route path="/best-selling" element={<Product />} />
         <Route path="/events" element={<Events />} />
+        <Route path="/event/:category/:id" element={<ShowEvent/>}/>
         <Route path="/FAQ" element={<FAQ />} />
 
         {/* Admin Authentication */}

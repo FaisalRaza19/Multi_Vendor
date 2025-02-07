@@ -39,7 +39,6 @@ export const shopVerify = async ({ otp, navigate, isAuth }) => {
         }
 
         const data = await response.json();
-        console.log(data);
         isAuth(true);
         localStorage.setItem("admin_token", data.data.accessToken);
         navigate("/Shop/dashboard/:id");

@@ -110,57 +110,44 @@ const addEvent = async (req, res) => {
 // get event 
 const getAllEvent = async (req, res) => {
     try {
-        // Fetch all shops and their events
-        const shops = await Shops.find({}, { events: 1, _id: 0 });
+        const shops = await Shops.find({}, { events: 1, _id: 0});
+
+        const allEvents = shops.flatMap((shop) => shop.events || []);
 
         let updatedEvents = [];
+        for (let event of allEvents) {
+            if (new Date(event.eventEnd) < new Date()) {
+                const shopId = event.shopInfo.shopId.toString();
+                const shop = await Shops.findById(shopId)
+                    .select('-password -refreshToken -personalInfo -phoneNumber -completedOrder -Orders');
 
-        shops.forEach((shop) => {
-            if (shop.events && shop.events.length > 0) {
-                shop.events.forEach((event) => {
-                    if (event.eventEnd < Date.now() && event.status !== "ended") {
-                        event.offerPrice = null;
-                        event.offerPercent = null;
-                        event.status = "ended";
-                        updatedEvents.push({ shopId: shopInfo?.shopId, eventId: event._id });
-                    }
-                });
-            }
-        });
-
-        // Bulk update the shops with modified events
-        for (const { shopId, eventId } of updatedEvents) {
-            await Shops.updateOne(
-                { _id: shopId, "events._id": eventId },
-                {
-                    $set: {
-                        "events.$.offerPrice": null,
-                        "events.$.offerPercent": null,
-                        "events.$.status": "ended"
+                if (shop) {
+                    const eventToUpdate = shop.events.find(e => e._id.equals(event._id));
+                    if (eventToUpdate) {
+                        eventToUpdate.offerPercent = 0;
+                        eventToUpdate.offerPrice = 0;
+                        eventToUpdate.status = "Expired"
+                        await shop.save();
+                        updatedEvents.push(eventToUpdate);
                     }
                 }
-            );
-        }
+            }
 
-        if (updatedEvents.length === 0) {
-            return res.status(200).json({
-                message: "Events get Successfully",
-                status: 200,
-                allEvents: shops
-            });
+            for (let i = 0; i < allEvents.length; i++) {
+                const updatedEvent = updatedEvents.find(updated => updated._id.equals(allEvents[i]._id));
+                if (updatedEvent) {
+                    allEvents[i] = updatedEvent;
+                }
+            }
         }
 
         return res.status(200).json({
             status: 200,
-            message: "Expired events updated successfully.",
-            updatedEvents: updatedEvents.length
+            message: "Events get successfully.",
+            allEvents,
         });
     } catch (error) {
-        console.error("Error updating events:", error);
-        return res.status(500).json({
-            message: "Something went wrong while updating events.",
-            error: error.message,
-        });
+        return res.status(500).json({ message: "Something went wrong while updating events.", error: error.message, });
     }
 };
 
@@ -276,7 +263,7 @@ const editEvent = async (req, res) => {
             // Determine which images to delete
             const idsToDelete = existingIds.filter((id) => !retainedIds.includes(id));
             for (const id of idsToDelete) {
-               await removeFileFromCloudinary(id);
+                await removeFileFromCloudinary(id);
             }
 
             // Upload new images
@@ -296,7 +283,7 @@ const editEvent = async (req, res) => {
                 ...event.images.filter((img) => retainedIds.includes(img.public_id)),
                 ...uploadedImages,
             ];
-        }else if(!eventImages){
+        } else if (!eventImages) {
             const retainedIds = req.body.publicId?.map((id) => id) || [];
             console.log(retainedIds)
             const existingIds = event.images.map((img) => img.public_id);
@@ -304,7 +291,7 @@ const editEvent = async (req, res) => {
             // Determine which images to delete
             const idsToDelete = existingIds.filter((id) => !retainedIds.includes(id));
             for (const id of idsToDelete) {
-               await removeFileFromCloudinary(id);
+                await removeFileFromCloudinary(id);
             }
             event.images = [
                 ...event.images.filter((img) => retainedIds.includes(img.public_id))

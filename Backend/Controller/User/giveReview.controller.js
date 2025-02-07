@@ -50,7 +50,7 @@ const giveReview = async (req, res) => {
         // Create the review object
         const review = {
             user: {
-                userId : user._id,
+                userId: user._id,
                 userName: user.userName,
                 avatar: user.avatar?.url,
             },
@@ -67,7 +67,7 @@ const giveReview = async (req, res) => {
 
         // add review 
         if (isEvent) {
-            item.productReviews.push(review); 
+            item.productReviews.push(review);
         } else {
             item.productReviews.push(review);
         }
@@ -75,6 +75,7 @@ const giveReview = async (req, res) => {
         await shop.save();
 
         return res.status(200).json({
+            status: 200,
             message: "Review added successfully.",
             review: review,
         });
@@ -91,8 +92,9 @@ const editReview = async (req, res) => {
         if (!userId) {
             return res.status(400).json({ message: "User not found" });
         }
-        const { productId, message } = req.body;
-        if (!productId || !message) {
+        const { id } = req.params;
+        const { messageId, message } = req.body;
+        if (!id || !message || !messageId) {
             return res.status(400).json({ message: "productId,and message are required" });
         }
         // Check message length
@@ -103,7 +105,7 @@ const editReview = async (req, res) => {
         // Fetch user and shop
         const [user, shop] = await Promise.all([
             User.findById(userId).select("-password -refreshToken"),
-            Shops.findOne({ "products._id": productId }),
+            Shops.findOne({ "products._id": id }),
         ]);
 
         // Check user and shop
@@ -115,13 +117,13 @@ const editReview = async (req, res) => {
         }
 
         // Find the product
-        const product = shop.products.find((e) => e?._id.toString() === productId);
+        const product = shop.products.find((e) => e?._id.toString() === id);
         if (!product) {
             return res.status(404).json({ message: "Product not found within the shop." });
         }
 
         // find message 
-        const findMessage = product.productReviews.find((e) => e?.userId.equals(userId));
+        const findMessage = product.productReviews.find((e) => e?._id.equals(messageId));
         if (!findMessage) {
             return res.status(404).json({ message: "Review not found for this user." });
         }
@@ -129,7 +131,7 @@ const editReview = async (req, res) => {
         findMessage.message = message;
         await shop.save();
 
-        return res.status(200).json({ message: "message update successfully", data: findMessage });
+        return res.status(200).json({ status: 200, message: "message update successfully", data: findMessage });
     } catch (error) {
         console.error("Error edit review:", error);
         return res.status(500).json({ message: "Internal server error while edit the review." });
@@ -143,15 +145,16 @@ const deleteReview = async (req, res) => {
         if (!userId) {
             return res.status(400).json({ message: "User not found" });
         }
-        const { productId } = req.body;
-        if (!productId) {
+        const { id } = req.params;
+        const { messageId } = req.body;
+        if (!id) {
             return res.status(400).json({ message: "productId and message are required" });
         }
 
         // Fetch user and shop
         const [user, shop] = await Promise.all([
             User.findById(userId).select("-password -refreshToken"),
-            Shops.findOne({ "products._id": productId }),
+            Shops.findOne({ "products._id": id }),
         ]);
 
         // Check user and shop
@@ -163,12 +166,12 @@ const deleteReview = async (req, res) => {
         }
 
         // Find the product
-        const product = shop.products.find((e) => e?._id.toString() === productId);
+        const product = shop.products.find((e) => e?._id.toString() === id);
         if (!product) {
             return res.status(404).json({ message: "Product not found within the shop." });
         }
 
-        const findMessage = product.productReviews.find((e) => e?.userId.equals(userId));
+        const findMessage = product.productReviews.find((e) => e?._id.equals(messageId));
         if (!findMessage) {
             return res.status(404).json({ message: "Review not found for this user." });
         }
@@ -176,7 +179,7 @@ const deleteReview = async (req, res) => {
         findMessage.deleteOne(findMessage);
         await shop.save();
 
-        return res.status(200).json({ message: "Message delete successfully", data: product.productReviews });
+        return res.status(200).json({ status: 200, message: "Message delete successfully", data: product.productReviews });
     } catch (error) {
         console.error("Error edit review:", error);
         return res.status(500).json({ message: "Internal server error while edit the review." });
@@ -192,15 +195,16 @@ const giveLike = async (req, res) => {
         }
 
         // Get and check productId and messageId
-        const { productId, messageId } = req.body;
-        if (!productId || !messageId) {
+        const { id } = req.params;
+        const {messageId} = req.body;
+        if (!id || !messageId) {
             return res.status(400).json({ message: "productId and messageId are required" });
         }
 
         // Get user and shop
         const [user, shop] = await Promise.all([
             User.findById(userId).select("-password -refreshToken"),
-            Shops.findOne({ "products._id": productId })
+            Shops.findOne({ "products._id": id })
         ]);
 
         // Check if user and shop exist
@@ -212,7 +216,7 @@ const giveLike = async (req, res) => {
         }
 
         // Find the product in the shop
-        const product = shop.products.find(e => e?._id.toString() === productId);
+        const product = shop.products.find(e => e?._id.toString() === id);
         if (!product) {
             return res.status(404).json({ message: "Product not found within the shop." });
         }
@@ -251,7 +255,7 @@ const giveLike = async (req, res) => {
         });
     } catch (error) {
         console.error("Error liking/unliking the message:", error);
-        return res.status(500).json({ message: "Internal server error while liking/unliking the message." });
+        return res.status(500).json({ status: 200, message: "Internal server error while liking/unliking the message." });
     }
 };
 
@@ -264,15 +268,16 @@ const giveUnLike = async (req, res) => {
         }
 
         // Get and check productId and messageId
-        const { productId, messageId } = req.body;
-        if (!productId || !messageId) {
+        const { id} = req.params;
+        const {messageId} = req.body;
+        if (!id || !messageId) {
             return res.status(400).json({ message: "productId and messageId are required" });
         }
 
         // Get user and shop
         const [user, shop] = await Promise.all([
             User.findById(userId).select("-password -refreshToken"),
-            Shops.findOne({ "products._id": productId })
+            Shops.findOne({ "products._id": id })
         ]);
 
         // Check if user and shop exist
@@ -284,7 +289,7 @@ const giveUnLike = async (req, res) => {
         }
 
         // Find the product in the shop
-        const product = shop.products.find(e => e?._id.toString() === productId);
+        const product = shop.products.find(e => e?._id.toString() === id);
         if (!product) {
             return res.status(404).json({ message: "Product not found within the shop." });
         }
@@ -317,6 +322,7 @@ const giveUnLike = async (req, res) => {
         await shop.save();
 
         return res.status(200).json({
+            status: 200,
             message: hasUnLiked ? "Message unliked successfully!" : "Message disliked successfully!",
             totalUnLikes: message.unLikes.totalUnLikes,
             totalLikes: message.likes.totalLikes

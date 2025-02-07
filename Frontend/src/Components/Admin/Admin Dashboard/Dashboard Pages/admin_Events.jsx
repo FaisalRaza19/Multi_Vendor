@@ -3,11 +3,12 @@ import { FaEye, FaEdit, FaTrash, FaTimes, FaArrowLeft, FaArrowRight, FaUpload } 
 import { AiOutlineLoading3Quarters } from 'react-icons/ai'
 import { ContextApi } from '../../../../Context/Context'
 import { categoriesData as categories } from "../../../../Static/static.jsx"
+import { timeLeft, formatDate } from "../../../../utils/timeLeft.jsx"
 
 const admin_Events = () => {
-    const {showAlert} = useContext(ContextApi)
-    const {getShop} = useContext(ContextApi).adminAuth
-    const {deleteEvents, editEvent } = useContext(ContextApi).adminEvents
+    const { showAlert } = useContext(ContextApi)
+    const { getShop } = useContext(ContextApi).adminAuth
+    const { deleteEvents, editEvent } = useContext(ContextApi).adminEvents
     const [products, setProducts] = useState([])
     const [viewProduct, setViewProduct] = useState(null);
     const [delEvent, setDelEvent] = useState();
@@ -78,7 +79,7 @@ const admin_Events = () => {
                 eventImages: editProduct?.images?.map((img) => img?.file).filter((file) => file !== null),
                 startDate: editProduct?.eventStart,
                 endDate: editProduct?.eventEnd,
-                category : editProduct?.category,
+                category: editProduct?.category,
             };
 
             const updatedProduct = await editEvent(productData);
@@ -112,51 +113,6 @@ const admin_Events = () => {
             setCurrentImageIndex((prevIndex) => (prevIndex - 1 + viewProduct.images.length) % viewProduct.images.length)
         }
     }
-
-    const formatDate = (date) => {
-        const parsedDate = new Date(date);
-
-        if (isNaN(parsedDate.getTime())) {
-            throw new Error('Invalid Date');
-        }
-
-        const year = parsedDate.getFullYear();
-        const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
-        const day = String(parsedDate.getDate()).padStart(2, '0');
-        const hours = String(parsedDate.getHours()).padStart(2, '0');
-        const minutes = String(parsedDate.getMinutes()).padStart(2, '0');
-
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
-    };
-
-    const getTimeLeft = (date) => {
-        if (!date) {
-            return 'Invalid Date';
-        }
-
-        const eventDate = date instanceof Date ? date : new Date(date);
-
-        // Validate the date
-        if (isNaN(eventDate.getTime())) {
-            return 'Invalid Date';
-        }
-
-        const now = new Date();
-        const timeLeft = eventDate.getTime() - now.getTime();
-
-        if (timeLeft <= 0) {
-            return 'Expired';
-        }
-
-        const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-
-        const pad = (num) => num.toString().padStart(2, '0');
-
-        return `${days}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
-    };
 
     const handleImageUpload = (e) => {
         const files = e.target.files;
@@ -230,10 +186,19 @@ const admin_Events = () => {
                                         </td>
                                         <td className="px-4 py-3 font-medium">{product.productTitle.slice(0, 20)}...</td>
                                         <td className="px-4 py-3">${product.actualPrice}</td>
-                                        <td className="px-4 py-3 font-semibold">{product.offerPercent}%</td>
-                                        <td className="px-4 py-3 font-semibold">${product.offerPrice.toFixed(2)}</td>
-                                        <td className="px-4 py-3 font-mono">{getTimeLeft(product.eventStart)}</td>
-                                        <td className="px-4 py-3 font-mono">{getTimeLeft(product.eventEnd)}</td>
+                                        {timeLeft(product.eventStart) !== "Expired" ? (
+                                            <>
+                                                <td className="px-4 py-3 font-semibold">{product.offerPercent}%</td>
+                                                <td className="px-4 py-3 font-semibold">${product.offerPrice.toFixed(2)}</td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <td className="px-4 py-3 font-semibold">0</td>
+                                                <td className="px-4 py-3 font-semibold">0</td>
+                                            </>
+                                        )}
+                                        <td className="px-4 py-3 font-mono">{timeLeft(product.eventStart)}</td>
+                                        <td className="px-4 py-3 font-mono">{timeLeft(product.eventEnd)}</td>
                                         <td className="px-4 py-3">
                                             <button onClick={() => setViewProduct(product)} className="text-blue-500 hover:text-blue-700 mr-2 transition-colors">
                                                 <FaEye size={18} />
@@ -333,15 +298,15 @@ const admin_Events = () => {
                                 </p>
                                 <p>Start Date :
                                     <span className="text-blue-400 ml-1">
-                                        {viewProduct.eventStart ? formatDate(viewProduct.eventStart) : 'Event Start'}
+                                        {viewProduct.eventStart ? timeLeft(viewProduct.eventStart) : 'Event Start'}
                                     </span>
                                 </p>
                                 <p>End Date :
                                     <span className="text-blue-400 ml-1">
-                                        {viewProduct.eventEnd ? formatDate(viewProduct.eventEnd) : 'Event End'}
+                                        {viewProduct.eventEnd ? timeLeft(viewProduct.eventEnd) : 'Event End'}
                                     </span>
                                 </p>
-                                <p>Time Left : <span className='text-blue-400'>{getTimeLeft(viewProduct.eventEnd)}</span></p>
+                                <p>Time Left : <span className='text-blue-400'>{timeLeft(viewProduct.eventEnd)}</span></p>
                             </div>
                         </div>
                         <div className="ml-6 mb-2">

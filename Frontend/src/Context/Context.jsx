@@ -15,6 +15,8 @@ import { createCoupon, deleteCoupon } from "./Context Api's/Admin/admin_coupon.j
 
 import { addEvents, editEvent, deleteEvents, fetchAllEvents, fetchEventById } from "./Context Api's/Admin/admin-events.jsx"
 
+import { addReview,delReview,editReview,giveLike,giveUnLike} from "./Context Api's/User/userReview.jsx";
+
 export const ContextApi = createContext();
 
 
@@ -30,6 +32,7 @@ export const ContextProvider = ({ children }) => {
     const adminProducts = { addProducts, deleteProduct, editProduct, getAllProducts, fetchProductById };
     const adminEvents = { addEvents, editEvent, deleteEvents, fetchAllEvents, fetchEventById };
     const adminCoupon = { createCoupon, deleteCoupon };
+    const userReviews = {addReview,delReview,editReview,giveLike,giveUnLike}
 
     const onClose = ()=> setAlert(null);
     const showAlert = (data)=>{
@@ -37,7 +40,7 @@ export const ContextProvider = ({ children }) => {
     }
     const toggleSidebar = () => setIsOpen(!isOpen)
     return (
-        <ContextApi.Provider value={{toggleSidebar,isOpen,alert,showAlert,onClose,userAuth, adminAuth, adminProducts, adminEvents, adminCoupon }}>
+        <ContextApi.Provider value={{toggleSidebar,isOpen,alert,showAlert,onClose,userAuth, adminAuth, adminProducts, adminEvents, adminCoupon,userReviews }}>
             {children}
         </ContextApi.Provider>
     )

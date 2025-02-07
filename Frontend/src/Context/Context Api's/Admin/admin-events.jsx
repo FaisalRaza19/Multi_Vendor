@@ -128,7 +128,7 @@ export const fetchAllEvents = async () => {
 };
 
 // fetch particular product through id 
-export const fetchEventById = async (eventId) => {
+export const fetchEventById = async ({eventId}) => {
     try {
         const response = await fetch(`${api.getEventById}/${eventId}`, {
             method: "GET",
@@ -143,6 +143,7 @@ export const fetchEventById = async (eventId) => {
         }
 
         const data = await response.json();
+        console.log(data);
         return data;
     } catch (error) {
         return error.message;

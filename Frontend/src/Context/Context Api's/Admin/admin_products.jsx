@@ -88,7 +88,7 @@ export const getAllProducts = async () => {
 };
 
 // get product through id
-export const fetchProductById = async (productId) => {
+export const fetchProductById = async ({productId}) => {
     try {
         const response = await fetch(`${api.getProductById}/${productId}`, {
             method: "GET",
