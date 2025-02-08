@@ -1,9 +1,9 @@
 import mongoose, { Schema } from "mongoose";
-import { BankAccountSchema } from "./bank.model.js";
+import { BankAccountSchema } from "../bank.model.js";
 import { addProduct } from "./addProductModel.js";
 import { admin_events } from "./event.model.js"
 import { couponSchema } from "./cupon.model.js";
-import { orderSchema } from "./Orders.model.js"
+import { orderSchema } from "../Orders.model.js"
 
 const adminSchema = new mongoose.Schema(
     {

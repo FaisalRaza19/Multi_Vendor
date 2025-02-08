@@ -1,9 +1,12 @@
 import mongoose from "mongoose";
-import { productReview } from "./review.model.js";
-import { couponSchema } from "./cupon.model.js";
+import { productReview } from "../User Models/review.model.js"
 
-export const addProduct = new mongoose.Schema(
+export const admin_events = new mongoose.Schema(
     {
+        shopInfo : {
+            type : Object,
+            required : true,
+        },
         productTitle: {
             type: String,
             required: true,
@@ -14,11 +17,6 @@ export const addProduct = new mongoose.Schema(
             type: Number,
             required: true,
             index: true,
-        },
-        giveOffer: {
-            type: Boolean,
-            required: true,
-            default: false,
         },
         offerPercent: {
             type: Number,
@@ -32,13 +30,12 @@ export const addProduct = new mongoose.Schema(
             type: String,
             required: true,
         },
-        Coupon: {
-            type: couponSchema,
-            default: null
-        },
         category: {
             type: String,
             required: true,
+        },
+        status : {
+            type : String,
         },
         images: [
             {
@@ -52,13 +49,17 @@ export const addProduct = new mongoose.Schema(
                 },
             },
         ],
-        shopInfo: {
-            type: Object,
-            required: [true || "User Not Found"],
-        },
         stock: {
             type: String,
             required: true,
+        },
+        eventStart: {
+            type: Date,
+            required: true
+        },
+        eventEnd: {
+            type: Date,
+            required: true
         },
         productReviews: [productReview]
     },

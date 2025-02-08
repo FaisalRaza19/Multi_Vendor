@@ -1,5 +1,5 @@
 import { validateCoupon } from "../../utils/InputVerifier.js";
-import { Shops } from "../../Models/Admin.model.js";
+import { Shops } from "../../Models/Admin Models/Admin.model.js";
 
 // Create coupons
 const createCoupon = async (req, res) => {

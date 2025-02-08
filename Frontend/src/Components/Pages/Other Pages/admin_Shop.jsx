@@ -120,7 +120,7 @@ const admin_Shop = () => {
                   ? products.map((e) => (
                     <div key={e?._id} className="bg-white w-auto rounded-lg shadow-md p-4">
                       <Link to={`/product/${e?.category?.replace(/\s+/g, "-")}/${e?._id}`}>
-                        <img src={e?.images[0]?.url || "/placeholder.svg"} alt="" className="w-full h-64 object-cover rounded-lg mb-2" />
+                        <img src={e?.images[0]?.url || "/placeholder.svg"} alt="" className="w-full h-64 object-contain rounded-lg mb-2" />
                       </Link>
                       <h3 className="font-bold text-lg">{e?.productTitle.slice(0, 25)}...</h3>
                       {e?.giveOffer ? (
@@ -150,7 +150,7 @@ const admin_Shop = () => {
                   : events.map((e) => (
                     <div key={e?._id} className="bg-white rounded-lg shadow-md p-4">
                       <div className="relative h-48 mb-2" onMouseEnter={() => setHoveredEvent(e?.id)} onMouseLeave={() => setHoveredEvent(null)}>
-                        <Link to="/showEvent">
+                        <Link to={`/event/${e?.category?.replace(/\s+/g, "-")}/${e._id}`}>
                           <img src={e?.images[currentImageIndex[e?.images?.id] || 0]?.url || "/placeholder.svg"} alt="" className="w-full h-full object-contain rounded-lg" />
                         </Link>
                         {hoveredEvent === e?.id && e?.images.length > 1 && (

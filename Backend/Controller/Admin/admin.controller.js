@@ -1,6 +1,6 @@
 import jsonWebToken from "jsonwebtoken";
 import bcrypt from "bcryptjs"
-import { Shops } from "../../Models/Admin.model.js";
+import { Shops } from "../../Models/Admin Models/Admin.model.js";
 import { sendEmail, verifyEmail } from "../../utils/sendAndVeriefyEmail.js"
 import { InputVerifier } from "../../utils/InputVerifier.js"
 import { fileUploadOnCloudinary } from "../../utils/fileUploadAndRemoveFromCloudinary.js";

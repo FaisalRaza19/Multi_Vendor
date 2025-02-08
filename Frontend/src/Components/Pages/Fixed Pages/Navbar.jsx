@@ -1,24 +1,34 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import { Link, useLocation } from "react-router";
 import { navItems, categoriesData } from "../../../Static/static.jsx";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { MdSearch, MdFavorite, MdShoppingCart, MdPerson, MdExpandMore, MdArrowForward, MdMenu, MdClose, } from "react-icons/md";
 import { ContextApi } from "../../../Context/Context.jsx"
+import { debounce } from "lodash";
 
 const Navbar = ({ path, shopPath }) => {
-    const {showAlert} = useContext(ContextApi);
-    const { FetchUser} = useContext(ContextApi).userAuth;
+    const { showAlert } = useContext(ContextApi);
+    const { FetchUser } = useContext(ContextApi).userAuth;
+    const { getAllProducts } = useContext(ContextApi).adminProducts;
     const [isOpen, setIsOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
     // const [cartQuantity, setCartQuantity] = useState(0);
-    // const [wishlistQuantity, setWishlistQuantity] = useState(0);
+    const [wishlistQuantity, setWishlistQuantity] = useState(0);
     const [imagePreview, setImagePreview] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filteredProducts, setFilteredProducts] = useState([]);
+    const [allProducts, setAllProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [dataNotFound, setDataNotFound] = useState(false);
+
     const pathname = useLocation();
 
     const fetchUser = async () => {
         try {
             const data = await FetchUser();
             showAlert(data);
+            setWishlistQuantity(data.data?.favouriteList.length)
             setImagePreview(data.data?.avatar?.url || "public/pic.jpg");
         } catch (error) {
             throw error
@@ -27,7 +37,45 @@ const Navbar = ({ path, shopPath }) => {
 
     useEffect(() => {
         fetchUser();
-    }, [])
+    }, []);
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const products = await getAllProducts();
+                setAllProducts(products.allProducts || []);
+            } catch (error) {
+                console.error("Error fetching products", error);
+            }
+        };
+        fetchProducts();
+    }, [getAllProducts]);
+
+    const debouncedSearch = useCallback(
+        debounce((query) => {
+            if (!query.trim()) {
+                setFilteredProducts([]);
+                setDataNotFound(false);
+                return;
+            }
+
+            const results = allProducts.filter(product =>
+                product?.productTitle.toLowerCase().includes(query.toLowerCase())
+            );
+
+            setFilteredProducts(results);
+            setDataNotFound(results.length === 0);
+        }, 500),
+        [allProducts]
+    );
+
+    const handleSearch = (e) => {
+        const query = e.target.value;
+        setSearchQuery(query);
+        setLoading(true);
+        debouncedSearch(query);
+        setTimeout(() => setLoading(false), 500);
+    };
 
 
     return (
@@ -44,14 +92,38 @@ const Navbar = ({ path, shopPath }) => {
                         <div className="hidden md:block flex-1 max-w-xl mx-4">
                             <div className="relative">
                                 <input
+                                    value={searchQuery}
+                                    onChange={handleSearch}
                                     type="text"
                                     placeholder="Search Product..."
                                     className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
-                                <MdSearch
-                                    className="absolute right-3 top-2.5 text-gray-400"
-                                    size={20}
-                                />
+                                <MdSearch className="absolute right-3 top-2.5 text-gray-400" size={20} />
+                                {searchQuery && (
+                                    <div className="absolute w-full bg-white border rounded-lg shadow-md mt-1 overflow-y-auto max-h-80">
+                                        {loading ? (
+                                            <div className="flex items-center justify-center p-4">
+                                                <AiOutlineLoading3Quarters size={37} className="animate-spin text-gray-600" />
+                                            </div>
+                                        ) : filteredProducts.length === 0 ? (
+                                            <div className="p-4 text-gray-500 text-center">Data not found</div>
+                                        ) : (
+                                            filteredProducts.map((product) => (
+                                                <Link
+                                                    onClick={() => setSearchQuery("")}
+                                                    key={product?._id}
+                                                    to={`/product/${product?.category?.replace(/\s+/g, "-")}/${product?._id}`}
+                                                    className="block px-4 py-2 hover:bg-gray-100"
+                                                >
+                                                    <div className="flex gap-5 items-center">
+                                                        <img src={product?.images?.[0]?.url || "/pic.jpg"} className="w-16 h-16 object-contain" />
+                                                        <span className="truncate">{product?.productTitle?.slice(0, 50) || "Title"}...</span>
+                                                    </div>
+                                                </Link>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className="flex items-center space-x-4">
@@ -115,14 +187,14 @@ const Navbar = ({ path, shopPath }) => {
                                     ))}
                                 </div>
                                 <div className="flex items-center space-x-4">
-                                    <button className="text-white hover:text-gray-200 relative">
-                                        <MdFavorite size={30} />
-                                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                                            0
-                                        </span>
-                                        {/* {wishlistQuantity >= 0 && (
-                                        )} */}
-                                    </button>
+                                    <Link to={"/user-dashboard/wishlist"}>
+                                        <button className="text-white hover:text-gray-200 relative">
+                                            <MdFavorite size={30} />
+                                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                                                {wishlistQuantity || 0}
+                                            </span>
+                                        </button>
+                                    </Link>
                                     <button className="text-white hover:text-gray-200 relative">
                                         <MdShoppingCart size={30} />
                                         <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">

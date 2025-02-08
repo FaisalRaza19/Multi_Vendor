@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import { orderSchema } from "../Orders.model.js";
 import { BankAccountSchema } from "../bank.model.js";
+import {wishList} from "./wishList.model.js"
 
 const userSchema = new mongoose.Schema(
     {
@@ -33,12 +34,7 @@ const userSchema = new mongoose.Schema(
         bankDetails: {
             type: BankAccountSchema,
         },
-        favouriteList: [{
-            type: Schema.Types.ObjectId,
-            ref: "AddProduct",
-            default: [],
-            index: true,
-        }],
+        favouriteList: [wishList],
         avatar: {
             url: {
                 type: String,

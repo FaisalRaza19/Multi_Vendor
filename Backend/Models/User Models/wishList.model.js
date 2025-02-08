@@ -1,22 +1,14 @@
-import mongoose from "mongoose";
-import { productReview } from "./review.model.js"
+import mongoose from 'mongoose'
 
-export const admin_events = new mongoose.Schema(
+export const wishList = new mongoose.Schema(
     {
-        shopInfo : {
-            type : Object,
-            required : true,
-        },
         productTitle: {
             type: String,
-            required: true,
-            index: true,
-            trim: true,
+            required: true
         },
         actualPrice: {
             type: Number,
             required: true,
-            index: true,
         },
         offerPercent: {
             type: Number,
@@ -28,14 +20,15 @@ export const admin_events = new mongoose.Schema(
         },
         productDescription: {
             type: String,
-            required: true,
+            required: true
+        },
+        user : {
+            type : Object,
+            required : true,
         },
         category: {
             type: String,
             required: true,
-        },
-        status : {
-            type : String,
         },
         images: [
             {
@@ -49,19 +42,10 @@ export const admin_events = new mongoose.Schema(
                 },
             },
         ],
-        stock: {
-            type: String,
-            required: true,
+        shopInfo: {
+            type: Object,
+            required: [true || "User Not Found"],
         },
-        eventStart: {
-            type: Date,
-            required: true
-        },
-        eventEnd: {
-            type: Date,
-            required: true
-        },
-        productReviews: [productReview]
     },
     {
         timestamps: true,

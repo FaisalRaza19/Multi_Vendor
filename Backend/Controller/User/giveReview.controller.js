@@ -1,5 +1,5 @@
 import { User } from "../../Models/User Models/user.model.js";
-import { Shops } from "../../Models/Admin.model.js"
+import { Shops } from "../../Models/Admin Models/Admin.model.js"
 
 // give review 
 const giveReview = async (req, res) => {
@@ -80,8 +80,7 @@ const giveReview = async (req, res) => {
             review: review,
         });
     } catch (error) {
-        console.error("Error adding review:", error);
-        return res.status(500).json({ message: "Internal server error while adding the review." });
+        return res.status(500).json({ message: "Internal server error while adding the review.",error });
     }
 };
 
@@ -147,8 +146,7 @@ const editReview = async (req, res) => {
 
         return res.status(200).json({ status: 200, message: "message update successfully", data: findMessage });
     } catch (error) {
-        console.error("Error edit review:", error);
-        return res.status(500).json({ message: "Internal server error while edit the review." });
+        return res.status(500).json({ message: "Internal server error while edit the review.",error});
     }
 }
 
@@ -211,8 +209,7 @@ const deleteReview = async (req, res) => {
 
         return res.status(200).json({ status: 200, message: "Message delete successfully", data: item.productReviews });
     } catch (error) {
-        console.error("Error edit review:", error);
-        return res.status(500).json({ message: "Internal server error while edit the review." });
+        return res.status(500).json({ message: "Internal server error while edit the review.",errro});
     }
 }
 
@@ -294,8 +291,7 @@ const giveLike = async (req, res) => {
             totalUnLikes: message.unLikes.totalUnLikes
         });
     } catch (error) {
-        console.error("Error liking/unliking the message:", error);
-        return res.status(500).json({ status: 200, message: "Internal server error while liking/unliking the message." });
+        return res.status(500).json({ status: 200, message: "Internal server error while liking/unliking the message.",error});
     }
 };
 
@@ -378,8 +374,7 @@ const giveUnLike = async (req, res) => {
             totalLikes: message.likes.totalLikes
         });
     } catch (error) {
-        console.error("Error liking/unliking the message:", error);
-        return res.status(500).json({ message: "Internal server error while liking/unliking the message." });
+        return res.status(500).json({ message: "Internal server error while liking/unliking the message.",error});
     }
 };
 

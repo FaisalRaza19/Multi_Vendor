@@ -1,4 +1,4 @@
-import { Shops } from "../../Models/Admin.model.js";
+import { Shops } from "../../Models/Admin Models/Admin.model.js";
 import { User } from "../../Models/User Models/user.model.js";
 
 // Handle checkout for multiple items in the cart
@@ -144,11 +144,7 @@ const createOrder = async (req, res) => {
 
         return res.status(200).json({ message: "Data retrived successfully", data: { order, "shop Order": shopOrders, grandTotalPrice } })
     } catch (error) {
-        console.error("Error during checkout:", error);
-        return res.status(500).json({
-            message: "Internal server error during checkout.",
-            error: error.message,
-        });
+        return res.status(500).json({message: "Internal server error during checkout.",error: error.message,});
     }
 };
 

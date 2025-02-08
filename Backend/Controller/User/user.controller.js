@@ -38,8 +38,7 @@ const getUserInfo = async (req, res) => {
 
         return res.status(200).json({status : 200, message: "Verification code sent to your email. Please verify." });
     } catch (error) {
-        console.error("Error in getUserInfo:", error);
-        return res.status(500).json({ statusCode: 500, message: "Error during registration.", error: error.message });
+        return res.status(500).json({ status: 500, message: "Error during registration.", error: error.message });
     }
 };
 
@@ -58,7 +57,6 @@ const resendVerificationCode = async (req, res) => {
 
         return res.status(200).json({status : 200, message: "New verification code sent to your email." });
     } catch (error) {
-        console.error("Error in resendVerificationCode:", error);
         return res.status(500).json({message: "Error while resending verification code.", error: error.message });
     }
 };
@@ -126,7 +124,6 @@ const registerUser = async (req, res) => {
             data: { checkUser, accessToken }
         });
     } catch (error) {
-        console.error("Error in registerUser:", error);
         return res.status(500).json({ message: "Error during registration.", error: error.message });
     }
 };
@@ -182,11 +179,7 @@ const login = async (req, res) => {
         // Return success response
         return res.status(200).json({ status: 200, message: "User logged in successfully.", data: { loggedInUser, accessToken } });
     } catch (error) {
-        console.error("Error logging in the user:", error);
-        return res.status(500).json({
-            message: "An error occurred while logging in.",
-            error: error.message,
-        });
+        return res.status(500).json({message: "An error occurred while logging in.",error: error.message,});
     }
 };
 
@@ -207,7 +200,7 @@ const logOut = async (req, res) => {
         return res.status(200).json({status : 200, message: "User logOut Successfully" })
 
     } catch (error) {
-        console.log("Something went wrong to logOut the user", error)
+        return res.status(500).json({message: "Error during LogOut the user.", error: error.message });
     }
 }
 
@@ -255,7 +248,6 @@ const updateAvatar = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error updating avatar:", error);
         return res.status(500).json({ message: "Something went wrong while updating the avatar", error: error.message });
     }
 }
@@ -373,7 +365,6 @@ const updateProfile = async (req, res) => {
 
         return res.status(200).json({status : 200, message: "Profile updated successfully", data: updatedUser });
     } catch (error) {
-        console.error("Error in updateProfile:", error);
         return res.status(500).json({ message: "An error occurred while updating the profile.", error: error.message });
     }
 };
@@ -391,7 +382,7 @@ const getUser = async (req, res) => {
         return res.status(200).json({status : 200, data: user, message: "User get Successfully" })
 
     } catch (error) {
-        console.log("something went wrong to get the user", error);
+        return res.status(500).json({message: "Something went wrong to get the User", error: error.message });
     }
 }
 

@@ -1,5 +1,5 @@
 import { fileUploadOnCloudinary, removeFileFromCloudinary } from "../../utils/fileUploadAndRemoveFromCloudinary.js";
-import { Shops } from "../../Models/Admin.model.js";
+import { Shops } from "../../Models/Admin Models/Admin.model.js";
 import { ProductVerifier } from "../../utils/InputVerifier.js"
 
 // Add Product

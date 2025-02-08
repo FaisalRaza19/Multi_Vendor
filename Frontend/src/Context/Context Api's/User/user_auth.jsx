@@ -12,7 +12,7 @@ export const Register = async ({ credential, navigate }) => {
 
         if (!response.ok) {
             const errorDetails = await response.json();
-            return {message : errorDetails.message.message || errorDetails.message};
+            return { message: errorDetails.message.message || errorDetails.message };
         }
 
         const data = await response.json();
@@ -35,7 +35,7 @@ export const CodeVerify = async ({ otp, navigate, isAuth }) => {
 
         if (!response.ok) {
             const errorDetails = await response.json();
-            return {message : errorDetails.message};
+            return { message: errorDetails.message };
         }
 
         const data = await response.json();
@@ -160,7 +160,7 @@ export const UpdateProfile = async ({ formData, navigate }) => {
 
         if (!response.ok) {
             const errorDetails = await response.json();
-            return {message :errorDetails.message};
+            return { message: errorDetails.message };
         }
         const data = await response.json();
         if (data.message !== "Profile updated successfully") {
@@ -214,7 +214,7 @@ export const LogOut = async ({ navigate, isAuth }) => {
 
         if (!response.ok) {
             const errorDetails = await response.json();
-            return {message : errorDetails.message};
+            return { message: errorDetails.message };
         }
         const data = await response.json();
         isAuth(false);
@@ -250,5 +250,59 @@ export const verifyJWT = async () => {
     } catch (error) {
         console.error("Error verifying JWT:", error);
         return { isValid: false, message: error.message };
+    }
+};
+
+
+// user wish list 
+export const addToWishList = async ({ id }) => {
+    try {
+        const token = localStorage.getItem("multi_token");
+        const response = await fetch(api.addToWishList, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+                "Authorization": token,
+            },
+            body: JSON.stringify({ id }),
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            const errorDetails = await response.json();
+            return { message: errorDetails.message.message || errorDetails.message };
+        }
+
+        const data = await response.json();
+        await FetchUser()
+        return data;
+    } catch (error) {
+        return error.message
+    }
+};
+
+export const removeToWishList = async ({ id }) => {
+    try {
+        const token = localStorage.getItem("multi_token");
+        const response = await fetch(api.removeToWishList, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+                "Authorization": token,
+            },
+            body: JSON.stringify({ id }),
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            const errorDetails = await response.json();
+            return { message: errorDetails.message.message || errorDetails.message };
+        }
+
+        const data = await response.json();
+        await FetchUser();
+        return data;
+    } catch (error) {
+        return error.message
     }
 };

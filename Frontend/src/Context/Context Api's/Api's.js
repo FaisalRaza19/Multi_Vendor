@@ -20,7 +20,7 @@ export const api = {
     // get shop through token and id 
     getShop: `http://localhost:${port}/admin/admin-getShop`,
     // get shop through id 
-    userGetShop : `http://localhost:${port}/admin/get-shop`,
+    userGetShop: `http://localhost:${port}/admin/get-shop`,
     editShopLogo: `http://localhost:${port}/admin/shop-EditLogo`,
     editShopProfile: `http://localhost:${port}/admin/shop-edit`,
     verifyShopProfile: `http://localhost:${port}/admin/shop-Verify-edit`,
@@ -32,23 +32,28 @@ export const api = {
     deleteProduct: `http://localhost:${port}/admin/shop-delProduct`,
     editProduct: `http://localhost:${port}/admin/shop-editProduct`,
     getAllProducts: `http://localhost:${port}/admin/shop-getAllProduct`,
-    getProductById : `http://localhost:${port}/admin/shop-getProduct`,
+    getProductById: `http://localhost:${port}/admin/shop-getProduct`,
 
     // events
     addEvents: `http://localhost:${port}/admin/shop-addEvent`,
     delEvents: `http://localhost:${port}/admin/shop-delEvent`,
     editEvent: `http://localhost:${port}/admin/shop-editEvent`,
-    getAllEvents : `http://localhost:${port}/admin/shop-getAllEvent`,
-    getEventById : `http://localhost:${port}/admin/shop-getEvent`,
+    getAllEvents: `http://localhost:${port}/admin/shop-getAllEvent`,
+    getEventById: `http://localhost:${port}/admin/shop-getEvent`,
 
     // coupons
-    createCoupon : `http://localhost:${port}/admin/create-copoun`,
-    deleteCoupon : `http://localhost:${port}/admin/delete-copoun`,
+    createCoupon: `http://localhost:${port}/admin/create-copoun`,
+    deleteCoupon: `http://localhost:${port}/admin/delete-copoun`,
 
     // reviews
-    giveReview : `http://localhost:${port}/review/give-review`,
-    delReview : `http://localhost:${port}/review/del-review`,
-    editReview : `http://localhost:${port}/review/edit-review`,
-    giveLike : `http://localhost:${port}/review/give-like`,
-    giveUnLike : `http://localhost:${port}/review//give-un-like`
+    giveReview: `http://localhost:${port}/review/give-review`,
+    delReview: `http://localhost:${port}/review/del-review`,
+    editReview: `http://localhost:${port}/review/edit-review`,
+    giveLike: `http://localhost:${port}/review/give-like`,
+    giveUnLike: `http://localhost:${port}/review//give-un-like`,
+
+    // wishlist 
+    addToWishList: `http://localhost:${port}/user/addToList`,
+    removeToWishList: `http://localhost:${port}/user/removeToList`,
+
 };

@@ -172,7 +172,7 @@ const SuggestedItems = () => {
                                                 <span className="text-sm text-red-500 mt-[1px]">{event?.offerPercent || 0}% off</span>
                                             </div>
                                         ) : (
-                                            <span className="text-lg font-bold text-green-600 mb-3">${event?.actualPrice}</span>
+                                            <span className="text-lg font-bold text-green-600 mb-3 grid">${event?.actualPrice}</span>
                                         )}
                                         <span className='font-bold'>{event.timeLeft}</span>
                                         <button

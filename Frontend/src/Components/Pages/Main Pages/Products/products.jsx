@@ -1,12 +1,13 @@
 import React, { useContext, useState, useEffect } from "react";
-import { FaHeart, FaEye, FaShoppingCart,FaArrowLeft,FaChevronLeft, FaChevronRight  } from "react-icons/fa";
+import { FaHeart, FaEye, FaShoppingCart, FaArrowLeft, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { ContextApi } from "../../../../Context/Context.jsx";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 const Products = () => {
-  const { showAlert, adminProducts } = useContext(ContextApi);
+  const { showAlert, adminProducts,userWishList} = useContext(ContextApi);
   const { getAllProducts } = adminProducts;
+  const { addToWishList } = userWishList;
   const [items, setItems] = useState([]);
   const [visibleProducts, setVisibleProducts] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,6 +37,15 @@ const Products = () => {
     fetchProducts();
   }, []);
 
+  // add to wish list 
+  const addToWish = async (id) => {
+    try {
+      const data = await addToWishList({ id });
+      console.log(data);
+    } catch (error) {
+      return error
+    }
+  }
   // Calculate the displayed products based on the current page
   const startIndex = (currentPage - 1) * productsPerPage;
   const endIndex = startIndex + visibleProducts;
@@ -103,7 +113,7 @@ const Products = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-gray-500 text-sm">{e?.total_sell || 0} sold</span>
                   <div className="flex space-x-2">
-                    <FaHeart size={20} className="text-gray-400 hover:text-red-500 cursor-pointer" />
+                    <FaHeart size={20} onClick={() => addToWish(e?._id)} className="text-gray-400 hover:text-red-500 cursor-pointer" />
                     <FaEye size={20} onClick={() => { setSelectedProduct(e) }} className="text-gray-400 hover:text-blue-500 cursor-pointer" />
                     <FaShoppingCart size={20} className="text-gray-400 hover:text-green-500 cursor-pointer" />
                   </div>

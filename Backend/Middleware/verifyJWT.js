@@ -1,6 +1,6 @@
 import JWT from "jsonwebtoken";
 import { User } from "../Models/User Models/user.model.js";
-import {Shops} from "../Models/Admin.model.js"
+import {Shops} from "../Models/Admin Models/Admin.model.js"
 
 export const verifyJWT = async (req, res, next) => {
     try {
