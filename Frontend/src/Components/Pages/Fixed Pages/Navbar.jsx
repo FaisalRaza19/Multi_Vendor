@@ -2,18 +2,18 @@ import React, { useContext, useEffect, useState, useCallback } from "react";
 import { Link, useLocation } from "react-router";
 import { navItems, categoriesData } from "../../../Static/static.jsx";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { FiX, FiMinus, FiPlus, FiTrash2 } from "react-icons/fi"
 import { MdSearch, MdFavorite, MdShoppingCart, MdPerson, MdExpandMore, MdArrowForward, MdMenu, MdClose, } from "react-icons/md";
 import { ContextApi } from "../../../Context/Context.jsx"
 import { debounce } from "lodash";
 
 const Navbar = ({ path, shopPath }) => {
-    const { showAlert } = useContext(ContextApi);
+    const { showAlert, cart, cartTotal, removeFromCart,updateQuantity,} = useContext(ContextApi);
     const { FetchUser } = useContext(ContextApi).userAuth;
     const { getAllProducts } = useContext(ContextApi).adminProducts;
     const [isOpen, setIsOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
-    // const [cartQuantity, setCartQuantity] = useState(0);
     const [wishlistQuantity, setWishlistQuantity] = useState(0);
     const [imagePreview, setImagePreview] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
@@ -21,8 +21,14 @@ const Navbar = ({ path, shopPath }) => {
     const [allProducts, setAllProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [dataNotFound, setDataNotFound] = useState(false);
+    const [open, setOpen] = useState(false)
+    const [cartData, setCartData] = useState([]);
 
     const pathname = useLocation();
+
+    useEffect(() => {
+        setCartData(cart)
+    }, [cart]);
 
     const fetchUser = async () => {
         try {
@@ -76,7 +82,6 @@ const Navbar = ({ path, shopPath }) => {
         debouncedSearch(query);
         setTimeout(() => setLoading(false), 500);
     };
-
 
     return (
         <>
@@ -195,13 +200,11 @@ const Navbar = ({ path, shopPath }) => {
                                             </span>
                                         </button>
                                     </Link>
-                                    <button className="text-white hover:text-gray-200 relative">
+                                    <button className="text-white hover:text-gray-200 relative" onClick={() => setOpen(true)}>
                                         <MdShoppingCart size={30} />
                                         <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                                            0
+                                            {cart.length || 0}
                                         </span>
-                                        {/* {cartQuantity >= 0 && (
-                                        )} */}
                                     </button>
                                     <Link to={path} className="border-gray-50 rounded-full overflow-hidden">
                                         <img
@@ -213,6 +216,79 @@ const Navbar = ({ path, shopPath }) => {
 
                                 </div>
                             </div>
+                            {open && <div className="fixed inset-0 bg-opacity-50 z-40" onClick={() => setOpen(false)}></div>}
+                            <div
+                                className={`fixed right-0 top-0 h-full w-80 bg-white shadow-lg z-50 transform transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "translate-x-full"
+                                    }`}
+                            >
+                                <div className="flex flex-col h-full">
+                                    <div className="flex justify-between items-center p-4 border-b">
+                                        <h2 className="text-lg font-semibold">Your Cart</h2>
+                                        <button
+                                            onClick={() => setOpen(false)}
+                                            className="p-2 text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-300 rounded-md"
+                                            aria-label="Close cart"
+                                        >
+                                            <FiX className="w-6 h-6" />
+                                        </button>
+                                    </div>
+
+                                    <div className="flex-grow p-4 overflow-y-auto">
+                                        {cart.length > 0 ? (
+                                            cartData.map((item) => (
+                                                <div key={item._id} className="flex items-center gap-2 mb-4 pb-4 border-b">
+                                                    <img src={item.images[0]?.url || "/placeholder.jpg"} className="w-16 h-16 object-cover rounded-lg" />
+                                                    <div className="flex-grow">
+                                                        <h3 className="text-sm font-medium">
+                                                            {item?.productTitle.length > 20 ? `${item.productTitle.slice(0, 20)}...` : item.productTitle}
+                                                        </h3>
+                                                        <div className="flex items-center mt-1">
+                                                            <button
+                                                                onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                                                                className="text-gray-500 hover:text-gray-700"
+                                                            >
+                                                                <FiMinus className="w-4 h-4" />
+                                                            </button>
+                                                            <span className="mx-2 text-sm">{item.quantity}</span>
+                                                            <button
+                                                                onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                                                                className="text-gray-500 hover:text-gray-700"
+                                                            >
+                                                                <FiPlus className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                        <p className="text-sm text-gray-600 mt-1">${((item.offerPrice || item.actualPrice) * item.quantity).toFixed(2)}</p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => removeFromCart(item._id)}
+                                                        className="text-red-500 hover:text-red-700"
+                                                        aria-label="Remove item"
+                                                    >
+                                                        <FiTrash2 className="w-5 h-5" />
+                                                    </button>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-center text-gray-500 py-4">Your cart is empty</p>
+                                        )}
+                                    </div>
+
+                                    {cart.length > 0 && (
+                                        <div className="p-4 border-t">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <span className="font-semibold">Total:</span>
+                                                <span className="font-bold">${cartTotal}</span>
+                                            </div>
+                                            <button
+                                                // onClick={handleCheckout}
+                                                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-300"
+                                            >
+                                                Checkout
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </nav>
                 </header>
@@ -222,14 +298,38 @@ const Navbar = ({ path, shopPath }) => {
                             <div className="mb-4">
                                 <div className="relative">
                                     <input
+                                        value={searchQuery}
+                                        onChange={handleSearch}
                                         type="text"
                                         placeholder="Search Product..."
                                         className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
-                                    <MdSearch
-                                        className="absolute right-3 top-2.5 text-gray-400"
-                                        size={20}
-                                    />
+                                    <MdSearch className="absolute right-3 top-2.5 text-gray-400" size={20} />
+                                    {searchQuery && (
+                                        <div className="absolute w-full bg-white border rounded-lg shadow-md mt-1 overflow-y-auto max-h-80">
+                                            {loading ? (
+                                                <div className="flex items-center justify-center p-4">
+                                                    <AiOutlineLoading3Quarters size={37} className="animate-spin text-gray-600" />
+                                                </div>
+                                            ) : filteredProducts.length === 0 ? (
+                                                <div className="p-4 text-gray-500 text-center">Data not found</div>
+                                            ) : (
+                                                filteredProducts.map((product) => (
+                                                    <Link
+                                                        onClick={() => setSearchQuery("")}
+                                                        key={product?._id}
+                                                        to={`/product/${product?.category?.replace(/\s+/g, "-")}/${product?._id}`}
+                                                        className="block px-4 py-2 hover:bg-gray-100"
+                                                    >
+                                                        <div className="flex gap-5 items-center">
+                                                            <img src={product?.images?.[0]?.url || "/pic.jpg"} className="w-16 h-16 object-contain" />
+                                                            <span className="truncate">{product?.productTitle?.slice(0, 50) || "Title"}...</span>
+                                                        </div>
+                                                    </Link>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="mb-4">
@@ -287,17 +387,15 @@ const Navbar = ({ path, shopPath }) => {
                                     <MdFavorite size={24} />
                                     {wishlistQuantity >= 0 && (
                                         <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                                            {wishlistQuantity}
+                                            {wishlistQuantity || 0}
                                         </span>
                                     )}
                                 </button>
                                 <button className="text-gray-600 hover:text-gray-900 relative">
                                     <MdShoppingCart size={24} />
-                                    {cartQuantity >= 0 && (
-                                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                                            {cartQuantity}
-                                        </span>
-                                    )}
+                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                                        {cart.length || 0}
+                                    </span>
                                 </button>
                                 <Link to={path}>
                                     <button className="text-gray-600 hover:text-gray-900">
@@ -308,7 +406,7 @@ const Navbar = ({ path, shopPath }) => {
                         </div>
                     </div>
                 )}
-            </div>
+            </div >
         </>
     );
 };

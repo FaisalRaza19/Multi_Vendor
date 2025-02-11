@@ -5,7 +5,7 @@ import { ContextApi } from "../../../../Context/Context.jsx";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 const Products = () => {
-  const { showAlert, adminProducts,userWishList} = useContext(ContextApi);
+  const { showAlert, adminProducts, userWishList,addToCart} = useContext(ContextApi);
   const { getAllProducts } = adminProducts;
   const { addToWishList } = userWishList;
   const [items, setItems] = useState([]);
@@ -115,7 +115,7 @@ const Products = () => {
                   <div className="flex space-x-2">
                     <FaHeart size={20} onClick={() => addToWish(e?._id)} className="text-gray-400 hover:text-red-500 cursor-pointer" />
                     <FaEye size={20} onClick={() => { setSelectedProduct(e) }} className="text-gray-400 hover:text-blue-500 cursor-pointer" />
-                    <FaShoppingCart size={20} className="text-gray-400 hover:text-green-500 cursor-pointer" />
+                    <FaShoppingCart size={20} onClick={() => addToCart(e)} className="text-gray-400 hover:text-green-500 cursor-pointer" />
                   </div>
                 </div>
               </div>

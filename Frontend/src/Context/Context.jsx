@@ -1,4 +1,4 @@
-import React, { createContext, useState } from "react";
+import React, { createContext, useState, useEffect } from "react";
 import {
     Register, CodeVerify, ResendCode, Login, UpdateAvatar, UpdateProfile,
     VerifyProfile, LogOut, FetchUser, verifyJWT
@@ -17,7 +17,9 @@ import { addEvents, editEvent, deleteEvents, fetchAllEvents, fetchEventById } fr
 
 import { addReview, delReview, editReview, giveLike, giveUnLike } from "./Context Api's/User/userReview.jsx";
 
-import {addToWishList,removeToWishList} from "./Context Api's/User/userWishList.jsx"
+import { addToWishList, removeToWishList } from "./Context Api's/User/userWishList.jsx";
+
+import { addToCart, removeFromCart} from "./Context Api's/User/cart.jsx";
 
 export const ContextApi = createContext();
 
@@ -25,6 +27,57 @@ export const ContextApi = createContext();
 export const ContextProvider = ({ children }) => {
     const [alert, setAlert] = useState();
     const [isOpen, setIsOpen] = useState(false);
+    const [cart, setCart] = useState([]);
+    const [cartTotal, setCartTotal] = useState(0);
+
+    // Function to calculate subtotal for each product
+    const calculateSubtotal = (product) => {
+        const price = product.offerPrice || product.actualPrice;
+        return price * product.quantity;
+    };
+
+    // Load cart from localStorage on page load
+    useEffect(() => {
+        const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+        setCart(storedCart);
+        updateCartTotal(storedCart);
+    }, []);
+
+    // Function to update cart total
+    const updateCartTotal = (updatedCart) => {
+        const totalAmount = updatedCart.reduce((sum, item) => sum + calculateSubtotal(item), 0);
+        setCartTotal(totalAmount);
+        localStorage.setItem("cart", JSON.stringify(updatedCart));
+    };
+
+    // Function to add product to cart
+    const addToCartHandler = (product) => {
+        const result = addToCart(product);
+        if (result.status === 200) {
+            const updatedCart = JSON.parse(localStorage.getItem("cart")) || [];
+            setCart(updatedCart);
+            updateCartTotal(updatedCart);
+        }
+    };
+
+    // Function to remove product from cart
+    const removeFromCartHandler = (productId) => {
+        const result = removeFromCart(productId);
+        if (result.status === 200) {
+            const updatedCart = JSON.parse(localStorage.getItem("cart")) || [];
+            setCart(updatedCart);
+            updateCartTotal(updatedCart);
+        }
+    };
+
+    // Function to update product quantity in cart
+    const updateQuantity = (id, newQuantity) => {
+        const updatedCart = cart.map((item) =>
+            item._id === id ? { ...item, quantity: Math.max(1, newQuantity) } : item
+        );
+        setCart(updatedCart);
+        updateCartTotal(updatedCart);
+    };
 
     const userAuth = {
         Register, CodeVerify, ResendCode, Login, UpdateAvatar, UpdateProfile, VerifyProfile, LogOut, FetchUser, verifyJWT,
@@ -38,7 +91,7 @@ export const ContextProvider = ({ children }) => {
     const adminEvents = { addEvents, editEvent, deleteEvents, fetchAllEvents, fetchEventById };
     const adminCoupon = { createCoupon, deleteCoupon };
     const userReviews = { addReview, delReview, editReview, giveLike, giveUnLike };
-    const userWishList = {addToWishList,removeToWishList};
+    const userWishList = { addToWishList, removeToWishList };
 
     const onClose = () => setAlert(null);
     const showAlert = (data) => {
@@ -48,7 +101,8 @@ export const ContextProvider = ({ children }) => {
     return (
         <ContextApi.Provider value={{
             toggleSidebar, isOpen, alert, showAlert, onClose, userAuth, adminAuth,
-            adminProducts, adminEvents, adminCoupon, userReviews,userWishList
+            adminProducts, adminEvents, adminCoupon, userReviews, userWishList,
+            cart, setCart, cartTotal, addToCart: addToCartHandler, removeFromCart: removeFromCartHandler,updateQuantity,
         }}>
             {children}
         </ContextApi.Provider>

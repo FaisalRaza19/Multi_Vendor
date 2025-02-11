@@ -244,7 +244,7 @@ const Review = () => {
             {/* display review section */}
             <div className="bg-gray-200 p-5 rounded-lg">
                 <h2 className="text-xl font-semibold mb-4">All Reviews</h2>
-                <div className="h-[calc(100vh-200px)] overflow-y-auto pr-2 space-y-4">
+                <div className="h-[calc(50vh-200px)] overflow-y-auto pr-2 space-y-4">
                     {Loading ? (
                         <div className="flex justify-center">
                             <AiOutlineLoading3Quarters size={40} className="animate-spin" />

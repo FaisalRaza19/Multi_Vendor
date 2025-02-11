@@ -1,7 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import { orderSchema } from "../Orders.model.js";
 import { BankAccountSchema } from "../bank.model.js";
-import {wishList} from "./wishList.model.js"
+import { wishList } from "./wishList.model.js"
 
 const userSchema = new mongoose.Schema(
     {
