@@ -1,10 +1,9 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useNavigate} from 'react-router'
 import { ContextApi } from '../../../Context/Context.jsx'
 import { FiMenu, FiGift, FiTag, FiShoppingBag, FiPackage, FiMessageSquare, FiLogOut, FiUser } from 'react-icons/fi'
 
-const adminNavbar = ({isAuth}) => {
-    const {shopId} = useParams();
+const adminNavbar = ({isAuth,shopId}) => {
     const {showAlert,toggleSidebar} = useContext(ContextApi);
     const {getShop,ShopLogOut } = useContext(ContextApi).adminAuth
     const [imagePreview, setImagePreview] = useState("");
@@ -61,10 +60,10 @@ const adminNavbar = ({isAuth}) => {
                 <Link to="/p" variant="ghost" size="icon" className="hidden md:flex">
                     <FiTag className="w-5 h-5 text-gray-600" />
                 </Link>
-                <Link to="/Shop/products" variant="ghost" size="icon" className="hidden md:flex">
+                <Link to={`/Shop/${shopId}/products`} variant="ghost" size="icon" className="hidden md:flex">
                     <FiShoppingBag className="w-5 h-5 text-gray-600" />
                 </Link>
-                <Link to="/Shop/orders" variant="ghost" size="icon" className="hidden md:flex">
+                <Link to={`/Shop/${shopId}/orders`} variant="ghost" size="icon" className="hidden md:flex">
                     <FiPackage className="w-5 h-5 text-gray-600" />
                 </Link>
                 <Link to="/e" variant="ghost" size="icon" className="hidden md:flex">

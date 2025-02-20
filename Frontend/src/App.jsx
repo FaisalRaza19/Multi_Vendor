@@ -9,6 +9,7 @@ import Events from "./Components/Pages/Main Pages/Events/Events.jsx";
 import FAQ from "./Components/Pages/Main Pages/FAQ/FAQ.jsx";
 import Footer from "./Components/Pages/Fixed Pages/Footer.jsx";
 import Admin_Shop from "./Components/Pages/Other Pages/admin_Shop.jsx";
+import CheckOut from "./Components/Pages/Other Pages/checkOut.jsx"
 // user auth
 import SignUp from "./Components/User/userAuth/userSignUp.jsx";
 import EmailVerify from "./Components/User/userAuth/emailVerify.jsx";
@@ -35,15 +36,15 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [shopAuth, setShopAuth] = useState(false);
   const authPage = useLocation();
-  const isAuthPage = ["/login", "/signUp", "/emailVerify", "/Shop-register", "/Shop-login","/admin-VerifyProfile", "/verifyProfile", 
+  const isAuthPage = ["/login", "/signUp", "/emailVerify", "/Shop-register", "/Shop-login", "/admin-VerifyProfile", "/verifyProfile",
     "/Shop-emailVerify"].includes(authPage.pathname);
-  
+
   const isShop = ["/Shop", "/admin_Shop"].some(e => authPage.pathname.startsWith(e));
 
 
   const getId = () => {
     const token = localStorage.getItem("admin_token")
-    if(token){
+    if (token) {
       const decodeToken = jwtDecode(token);
       setShopId(decodeToken.adminId)
     }
@@ -84,24 +85,25 @@ function App() {
   return (
     <>
       <Alert />
-      {!isAuthPage && !isShop && <Navbar path={isAuthenticated ? "/user-dashboard" : "/login"} shopPath={shopAuth ? `/Shop/${shopId}/dashboard` : "/Shop-login"} />}
+      {!isAuthPage && !isShop && <Navbar isAuth={isAuthenticated} path={isAuthenticated ? "/user-dashboard" : "/login"} shopPath={shopAuth ? `/Shop/${shopId}/dashboard` : "/Shop-login"} />}
       <Routes>
         {/* General Pages */}
         <Route path="/" element={<Home />} />
         <Route path="/products" element={<Product />} />
-        <Route path="/product/:category/:id" element={<ShowProduct/>}/>
+        <Route path="/product/:category/:id" element={<ShowProduct />} />
         {/* get shop */}
-        <Route path="/admin_Shop/:shopId" element={<Admin_Shop/>}/>
+        <Route path="/admin_Shop/:shopId" element={<Admin_Shop />} />
         <Route path="/best-selling" element={<Product />} />
         <Route path="/events" element={<Events />} />
-        <Route path="/event/:category/:id" element={<ShowEvent/>}/>
+        <Route path="/event/:category/:id" element={<ShowEvent />} />
         <Route path="/FAQ" element={<FAQ />} />
+        <Route path="/checkOut" element={isAuthenticated ? <CheckOut /> : <Navigate to={"/"} />} />
 
         {/* Admin Authentication */}
         <Route path="/Shop-login" element={shopAuth ? <Navigate to='/Shop/dashboard' replace /> : <AdminLogin isAuth={setShopAuth} />} />
         <Route path="/Shop-register" element={shopAuth ? <Navigate to='/Shop/dashboard' replace /> : <AdminRegister />} />
         <Route path="/Shop-emailVerify" element={shopAuth ? <Navigate to='/Shop/dashboard' replace /> : <AdminEmailVerify isAuth={setShopAuth} />} />
-        <Route path="/admin-VerifyProfile" element={<AdminProfileEmailVerify/>} />
+        <Route path="/admin-VerifyProfile" element={<AdminProfileEmailVerify />} />
         <Route path={`/Shop/${shopId}/*`} element={shopAuth ? <Admin isAuth={setShopAuth} /> : <Navigate to="/Shop-login" />} />
 
         {/* User Authentication */}

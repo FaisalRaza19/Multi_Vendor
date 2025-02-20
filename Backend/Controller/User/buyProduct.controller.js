@@ -1,152 +1,148 @@
 import { Shops } from "../../Models/Admin Models/Admin.model.js";
 import { User } from "../../Models/User Models/user.model.js";
+import { v4 as uuidv4 } from "uuid";
 
-// Handle checkout for multiple items in the cart
+const generateUniqueOrderId = async (user, shopOrders) => {
+    let uniqueId;
+    let isUnique = false;
+
+    while (!isUnique) {
+        uniqueId = uuidv4();
+
+        // Check in user's existing orders
+        const userOrderExists = user.orders.some(order => order.similarOrderId === uniqueId);
+
+        // Check in each shop's existing orders
+        let shopOrderExists = false;
+        for (const shopId of shopOrders.keys()) {
+            const shop = await Shops.findById(shopId);
+            if (shop && shop.Orders.some(order => order.similarOrderId === uniqueId)) {
+                shopOrderExists = true;
+                break;
+            }
+        }
+
+        // If the ID is unique, break the loop
+        if (!userOrderExists && !shopOrderExists) {
+            isUnique = true;
+        }
+    }
+
+    return uniqueId;
+};
+
 const createOrder = async (req, res) => {
     try {
         const userId = req.user?._id;
         if (!userId) return res.status(401).json({ message: "Unauthorized user." });
-        // find user 
-        const user = await User.findById(userId).select("-password -refreshToken");
-        if (!user) {
-            return res.status(404).json({ message: "User not found." })
-        };
 
-        // get data 
-        const { products, shippingAddress, paymentInfo } = req.body;
+        // Find user
+        const user = await User.findById(userId).select("-password -refreshToken");
+        if (!user) return res.status(404).json({ message: "User not found." });
+
+        // Extract data correctly from 'credential'
+        const { shippingAddress, payment, products } = req.body.credential;
         if (!Array.isArray(products) || products.length === 0) {
             return res.status(400).json({ message: "At least one product is required." });
         }
 
-        // add,get and set products
         let cartItems = [];
-        // store products
-        const productCache = new Map();
-        // store shop Products 
         const shopOrders = new Map();
 
-        for (let i = 0; i < products.length; i++) {
-            const { shopId, productId, quantity } = products[i];
-            // verify data 
-            const quantityNumber = Number(quantity);
-            if (!productId || isNaN(quantityNumber) || quantityNumber < 1) {
-                return res.status(400).json({ message: `Invalid product data: 'productId' and a minimum 'quantity' of 1 are required.`, });
+        for (const item of products) {
+            const { shopInfo, _id: productId, quantity, actualPrice, giveOffer, offerPrice, productTitle, category, images, productDescription } = item;
+
+            // Ensure shopInfo exists and extract shopId
+            const shopId = shopInfo?.shopId;
+            if (!productId || !shopId || isNaN(Number(quantity)) || Number(quantity) < 1) {
+                return res.status(400).json({ message: "Invalid product data: Missing 'productId', 'shopId', or valid 'quantity'." });
             }
 
-            // check item 
-            const existingItem = cartItems.find((e) => e?.productId === productId);
-            if (existingItem) {
-                existingItem.quantity += quantityNumber;
-                existingItem.totalPrice += existingItem.productPrice * existingItem.quantity;
-            } else {
-                // find shop 
-                const shop = await Shops.findById({ "_id": shopId }).select("-password -refreshToken -personalInfo -phoneNumber");
-                if (!shop) {
-                    return res.status(400).json({ message: "shop not found", });
-                }
-                let product;
-                if (productCache.has(productId)) {
-                    product = productCache.get(productId);
-                } else {
-                    // find product 
-                    product = shop.products.find((e) => e._id.toString() === productId);
-                    if (!product) {
-                        return res.status(400).json({ message: "product not found", });
-                    }
-                    productCache.set(productId, product);
-                }
-                // get price
-                const price = product.giveOffer === false ? product.actualPrice : product.offerPrice;
-                // push item
-                cartItems.push({
-                    productId,
-                    productTitle: product.productTitle,
-                    productDescription: product.productDescription,
-                    shopInfo: product.shopInfo,
-                    productImages: product.images,
-                    category: product.category,
-                    quantity: quantityNumber,
-                    productPrice: price,
-                    totalPrice: price * quantityNumber,
-                });
-                // Group products by shopId for order processing
-                if (!shopOrders.has(shopId)) {
-                    shopOrders.set(shopId, []);
-                }
-                shopOrders.get(shopId).push({
-                    productId,
-                    productTitle: product.productTitle,
-                    productDescription: product.productDescription,
-                    shopInfo: product.shopInfo,
-                    productImages: product.images,
-                    category: product.category,
-                    quantity: quantityNumber,
-                    productPrice: price,
-                    totalPrice: price * quantityNumber,
-                });
-            }
+            // Check if shop exists
+            const shop = await Shops.findById(shopId).select("-password -refreshToken");
+            if (!shop) return res.status(400).json({ message: "Shop not found." });
+
+            // Determine final price
+            const price = giveOffer ? offerPrice : actualPrice;
+
+            // Prepare cart item
+            const cartItem = {
+                productId,
+                productTitle,
+                productDescription,
+                shopInfo,
+                productImages: images,
+                category,
+                quantity: Number(quantity),
+                productPrice: price,
+                totalPrice: price * quantity,
+            };
+
+            cartItems.push(cartItem);
+
+            // Group products by shop
+            if (!shopOrders.has(shopId)) shopOrders.set(shopId, []);
+            shopOrders.get(shopId).push(cartItem);
         }
 
-        // grand total 
+        // Generate a unique order ID
+        const similarOrderId = await generateUniqueOrderId(user, shopOrders);
+
+        // Calculate grand total
         const grandTotalPrice = cartItems.reduce((acc, item) => acc + item.totalPrice, 0);
 
+        // Create order object
         const order = {
+            similarOrderId,
             items: cartItems,
-            shippingAddress: {
-                country: shippingAddress.country,
-                state: shippingAddress.state,
-                city: shippingAddress.city,
-                zipCode: shippingAddress.zipCode,
-                homeAdress: shippingAddress.homeAdress,
-            },
+            shippingAddress,
             user: {
                 name: user.fullName,
                 userName: user.userName,
-                avatar: user.avatar
+                avatar: user.avatar,
             },
             totalPrice: grandTotalPrice,
-            paymentInfo,
+            paymentInfo: payment,
         };
 
+        // Save order to user
         user.orders.push(order);
-        user.save();
+        await user.save();
 
-        // Add the grouped order items to each shop's order array
+        // Save orders to each shop
         for (const [shopId, shopOrderItems] of shopOrders) {
             const shop = await Shops.findById(shopId);
-            if (!shop) {
-                return res.status(400).json({ message: "Shop not found." });
-            }
+            if (!shop) return res.status(400).json({ message: "Shop not found." });
 
-            // Create an order object for the shop
             const shopOrder = {
+                similarOrderId, 
                 items: shopOrderItems,
                 totalPrice: shopOrderItems.reduce((acc, item) => acc + item.totalPrice, 0),
-                shippingAddress: {
-                    country: shippingAddress.country,
-                    state: shippingAddress.state,
-                    city: shippingAddress.city,
-                    zipCode: shippingAddress.zipCode,
-                    homeAdress: shippingAddress.homeAdress,
-                },
+                shippingAddress,
                 user: {
                     name: user.fullName,
                     userName: user.userName,
-                    avatar: user.avatar
+                    avatar: user.avatar,
                 },
-                paymentInfo,
+                paymentInfo: payment,
             };
 
-            // Push the order to the shop's orders
             shop.Orders.push(shopOrder);
             await shop.save();
         }
 
-        return res.status(200).json({ message: "Data retrived successfully", data: { order, "shop Order": shopOrders, grandTotalPrice } })
+        return res.status(200).json({
+            status: 200,
+            message: "Order created successfully",
+            data: { order, shopOrders, grandTotalPrice },
+        });
+
     } catch (error) {
-        return res.status(500).json({ message: "Internal server error during checkout.", error: error.message, });
+        console.error("Error during order creation:", error);
+        return res.status(500).json({ message: "Internal server error.", error: error.message });
     }
 };
 
+export { createOrder };
 
-export { createOrder};
+

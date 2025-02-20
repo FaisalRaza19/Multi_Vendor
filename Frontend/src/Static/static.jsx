@@ -101,27 +101,6 @@ export const menuItems = [
     { id: 8, label: "Address", icon: <TbAddressBook size={20} />, path: "/user-dashboard/address" },
 ];
 
-// shop order 
-export const orders = [
-    {
-        id: '643b069f269a3e46475fff',
-        status: 'Refund Success',
-        quantity: 1,
-        total: 20.9
-    },
-    {
-        id: '643a6c6df53539699e74',
-        status: 'Delivered',
-        quantity: 2,
-        total: 74.8
-    },
-    {
-        id: '643f73aeff6da914fe2609f',
-        status: 'Delivered',
-        quantity: 1,
-        total: 53.9
-    }
-]
 
 // admin side bar data 
 import { FiLayout, FiShoppingBag, FiPackage, FiFilePlus, FiTag, FiPlusCircle, FiDollarSign, FiMessageSquare, FiGift, FiRefreshCw, } from 'react-icons/fi';

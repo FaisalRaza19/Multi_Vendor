@@ -7,8 +7,8 @@ import { MdSearch, MdFavorite, MdShoppingCart, MdPerson, MdExpandMore, MdArrowFo
 import { ContextApi } from "../../../Context/Context.jsx"
 import { debounce } from "lodash";
 
-const Navbar = ({ path, shopPath }) => {
-    const { showAlert, cart, cartTotal, removeFromCart,updateQuantity,} = useContext(ContextApi);
+const Navbar = ({ path, shopPath, isAuth }) => {
+    const { showAlert, cart, cartTotal, removeFromCart, updateQuantity, } = useContext(ContextApi);
     const { FetchUser } = useContext(ContextApi).userAuth;
     const { getAllProducts } = useContext(ContextApi).adminProducts;
     const [isOpen, setIsOpen] = useState(false);
@@ -279,12 +279,16 @@ const Navbar = ({ path, shopPath }) => {
                                                 <span className="font-semibold">Total:</span>
                                                 <span className="font-bold">${cartTotal}</span>
                                             </div>
-                                            <button
-                                                // onClick={handleCheckout}
-                                                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-300"
-                                            >
-                                                Checkout
-                                            </button>
+                                            <Link to="/checkOut" onClick={()=> setOpen(false)}>
+                                                <button
+                                                    className={`w-full text-white py-2 px-4 rounded-md transition duration-300 
+                                                        ${isAuth ? "bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50" : "bg-gray-400 cursor-not-allowed"}`}
+                                                    disabled={!isAuth}
+                                                >
+                                                    Checkout
+                                                </button>
+
+                                            </Link>
                                         </div>
                                     )}
                                 </div>
@@ -391,7 +395,7 @@ const Navbar = ({ path, shopPath }) => {
                                         </span>
                                     )}
                                 </button>
-                                <button className="text-gray-600 hover:text-gray-900 relative">
+                                <button className="text-gray-600 hover:text-gray-900 relative" onClick={() => setOpen(true)}>
                                     <MdShoppingCart size={24} />
                                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                                         {cart.length || 0}

@@ -6,6 +6,7 @@ import UserOrders from "./Dashboard Pages/UserOrders.jsx";
 import Refund from "./Dashboard Pages/Refund.jsx";
 import ChatPage from "./Dashboard Pages/ChatPage.jsx";
 import PaymentMethods from "./Dashboard Pages/PaymentMethod.jsx";
+import TrackOrder from "./Dashboard Pages/trackOrder.jsx"
 import Address from "./Dashboard Pages/Address.jsx";
 import WishList from "./Dashboard Pages/wishList.jsx"
 
@@ -23,7 +24,7 @@ const User = ({ isAuth }) => {
           <Route path="/orders" element={<UserOrders />} />
           <Route path="/refunds" element={<Refund />} />
           <Route path="/inbox/*" element={<ChatPage />} />
-          <Route path="/track-order" element={<h1>Track Order Page</h1>} />
+          <Route path="/track-order" element={<TrackOrder/>} />
           <Route path="/payment-method" element={<PaymentMethods />} />
           <Route path="/wishlist" element={<WishList />} />
           <Route path="/address" element={<Address />} />

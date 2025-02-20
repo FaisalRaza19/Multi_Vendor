@@ -12,9 +12,11 @@ import AdminProducts from './Dashboard Pages/admin_Products.jsx'
 import AdminAddProduct from './Dashboard Pages/admin_CreateProduct.jsx'
 import AdminEvents from './Dashboard Pages/admin_Events.jsx';
 import AdminAddEvent from './Dashboard Pages/admin_CreateEvent.jsx'
+import AdminCreateCoupon from './Dashboard Pages/admin_CreateCoupon.jsx'
 
 const Admin = ({ isAuth}) => {
     const [shopId, setShopId] = useState();
+    const [order,setOrder] = useState([]);
 
     const getId = () => {
         const token = localStorage.getItem("admin_token")
@@ -30,20 +32,21 @@ const Admin = ({ isAuth}) => {
             <Alert />
             </div>
             <div className="min-h-screen bg-gray-50">
-                <Admin_Navbar isAuth={isAuth} />
+                <Admin_Navbar isAuth={isAuth} shopId={shopId}/>
                 <div className='relative flex'>
                     <Admin_Sidebar shopId={shopId} />
                     <main className="flex-1 lg:ml-72">
                         <Routes>
                             <Route path="/" element={<Navigate to={`/Shop/${shopId}/dashboard`} />} />
-                            <Route path="/dashboard" element={<Dashboard/>} />
+                            <Route path="/dashboard" element={<Dashboard shopId={shopId} setOrder={setOrder}/>} />
                             <Route path="/settings" element={<AdminProfile/>} />
-                            <Route path="/orders" element={<AdminOrders shopId={shopId}/>} />
-                            <Route path="/order/:id" element={<Admin_OrderDetails />} />
+                            <Route path="/orders" element={<AdminOrders shopId={shopId} setOrder={setOrder}/>} />
+                            <Route path="/order/:id" element={<Admin_OrderDetails order={order} shopId={shopId}/>} />
                             <Route path="/products" element={<AdminProducts/>}/>
                             <Route path="/createProduct" element={<AdminAddProduct/>}/>
                             <Route path="/events" element={<AdminEvents/>}/>
                             <Route path="/createEvent" element={<AdminAddEvent/>}/>
+                            <Route path="/discounts" element={<AdminCreateCoupon/>}/>
                         </Routes>
                     </main>
                 </div>

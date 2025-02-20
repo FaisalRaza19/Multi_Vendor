@@ -1,4 +1,4 @@
-const port = 5698;
+const port = 8574;
 export const api = {
     // user api
     register: `http://localhost:${port}/user/register`,
@@ -56,4 +56,8 @@ export const api = {
     addToWishList: `http://localhost:${port}/user/addToList`,
     removeToWishList: `http://localhost:${port}/user/removeToList`,
 
+    // place order
+    placeOrder : `http://localhost:${port}/buyProduct/checkOut`,
+    givePayment : `http://localhost:${port}/payment/give-payment`,
+    changeStatus : `http://localhost:${port}/buyProduct/change-status`
 };

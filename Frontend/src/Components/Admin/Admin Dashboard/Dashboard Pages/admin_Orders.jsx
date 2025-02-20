@@ -1,29 +1,30 @@
-import React from 'react'
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
-import { Link, useParams } from 'react-router-dom'
+import React, { useState, useContext, useEffect } from 'react'
+import {FiChevronRight } from 'react-icons/fi';
+import { AiOutlineLoading3Quarters } from 'react-icons/ai';
+import { Link } from 'react-router-dom'
+import { ContextApi } from "../../../../Context/Context.jsx"
 
-const orders = [
-    {
-        id: '643b069f269a3e46475fff',
-        status: 'Refund Success',
-        quantity: 1,
-        total: 20.9
-    },
-    {
-        id: '643a6c6df53539699e74',
-        status: 'Delivered',
-        quantity: 2,
-        total: 74.8
-    },
-    {
-        id: '643f73aeff6da914fe2609f',
-        status: 'Delivered',
-        quantity: 1,
-        total: 53.9
-    }
-]
+const admin_Orders = ({ shopId, setOrder }) => {
+    const { getShop } = useContext(ContextApi).adminAuth;
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-const admin_Orders = ({shopId}) => {
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setLoading(true)
+                const data = await getShop({ shopId });
+                setOrder(data.data.shop.Orders)
+                setOrders(data.data.shop.Orders);
+            } catch (error) {
+                return error
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
+    },[]);
+
     return (
         <div className="p-4 space-y-8 lg:p-7">
             <div className="space-y-4">
@@ -39,43 +40,47 @@ const admin_Orders = ({shopId}) => {
                                 <th className="px-6 py-3"></th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {orders.map((order) => (
-                                <tr key={order.id} className="border-b">
-                                    <td className="px-6 py-4 text-sm whitespace-nowrap">{order.id}</td>
-                                    <td className="px-6 py-4">
-                                        <span
-                                            className={`px-2 py-1 text-xs rounded ${
-                                                order.status === 'Refund Success'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-blue-100 text-blue-800'
-                                            }`}
-                                        >
-                                            {order.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm">{order.quantity}</td>
-                                    <td className="px-6 py-4 text-sm">US$ {order.total}</td>
-                                    <td className="px-6 py-4">
-                                        <Link to={`/Shop/${shopId}/order/${order.id}`}>
-                                            <FiChevronRight className="w-5 h-5 text-gray-400 cursor-pointer" />
-                                        </Link>
+                        {loading ? (
+                            <tbody>
+                                <tr>
+                                    <td colSpan="6" className="p-5">
+                                        <div className="flex justify-center items-center">
+                                            <AiOutlineLoading3Quarters size={30} className="text-green-500 animate-spin" />
+                                        </div>
                                     </td>
                                 </tr>
-                            ))}
-                        </tbody>
+                            </tbody>
+                        ) : (
+                            <tbody>
+                                {orders.length > 0 ? orders.map((order) => (
+                                    <tr key={order._id} className="border-b">
+                                        <td className="px-6 py-4 text-sm whitespace-nowrap">{order.similarOrderId}</td>
+                                        <td className="px-6 py-4">
+                                            <span
+                                                className={`px-2 py-1 text-xs rounded ${order.status === 'Refund Success'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-blue-100 text-blue-800'
+                                                    }`}
+                                            >
+                                                {order.status || "Processing"}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm">{order.items.length || 0}</td>
+                                        <td className="px-6 py-4 text-sm">US$ {order.totalPrice || 0}</td>
+                                        <td className="px-6 py-4">
+                                            <Link to={`/Shop/${shopId}/order/${order._id}`}>
+                                                <FiChevronRight className="w-5 h-5 text-gray-400 cursor-pointer" />
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan="5" className="text-center py-5 text-gray-500">Orders Not Found</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        )}
                     </table>
-                    <div className="flex items-center justify-between px-6 py-3 border-t">
-                        <p className="text-sm text-gray-500">1-3 of 3</p>
-                        <div className="flex space-x-1">
-                            <button className="p-1 rounded hover:bg-gray-100" disabled>
-                                <FiChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button className="p-1 rounded hover:bg-gray-100" disabled>
-                                <FiChevronRight className="w-5 h-5" />
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

@@ -7,6 +7,7 @@ import { router as userRouter } from "./Routes/user.route.js";
 import { route as adminRoute } from "./Routes/admin.route.js";
 import { review } from "./Routes/review.route.js";
 import { buyProduct } from "./Routes/buyProduct.route.js";
+import {payment} from "./Routes/Payment.js";
 
 dotenv.config({ path: ".env" });
 
@@ -45,6 +46,7 @@ app.use("/user", userRouter);
 app.use("/admin", adminRoute);
 app.use("/review", review);
 app.use("/buyProduct", buyProduct);
+app.use("/payment",payment)
 
 app.use((err, req, res, next) => {
     console.error(err.stack);

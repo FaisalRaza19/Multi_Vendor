@@ -21,6 +21,8 @@ import { addToWishList, removeToWishList } from "./Context Api's/User/userWishLi
 
 import { addToCart, removeFromCart} from "./Context Api's/User/cart.jsx";
 
+import {placeOrder,givePayment,changeStatus} from "./Context Api's/User/order.jsx"
+
 export const ContextApi = createContext();
 
 
@@ -54,6 +56,7 @@ export const ContextProvider = ({ children }) => {
     const addToCartHandler = (product) => {
         const result = addToCart(product);
         if (result.status === 200) {
+            showAlert(result)
             const updatedCart = JSON.parse(localStorage.getItem("cart")) || [];
             setCart(updatedCart);
             updateCartTotal(updatedCart);
@@ -92,6 +95,7 @@ export const ContextProvider = ({ children }) => {
     const adminCoupon = { createCoupon, deleteCoupon };
     const userReviews = { addReview, delReview, editReview, giveLike, giveUnLike };
     const userWishList = { addToWishList, removeToWishList };
+    const order = {placeOrder,givePayment,changeStatus};
 
     const onClose = () => setAlert(null);
     const showAlert = (data) => {
@@ -102,7 +106,7 @@ export const ContextProvider = ({ children }) => {
         <ContextApi.Provider value={{
             toggleSidebar, isOpen, alert, showAlert, onClose, userAuth, adminAuth,
             adminProducts, adminEvents, adminCoupon, userReviews, userWishList,
-            cart, setCart, cartTotal, addToCart: addToCartHandler, removeFromCart: removeFromCartHandler,updateQuantity,
+            cart, setCart, cartTotal, addToCart: addToCartHandler, removeFromCart: removeFromCartHandler,updateQuantity,order
         }}>
             {children}
         </ContextApi.Provider>

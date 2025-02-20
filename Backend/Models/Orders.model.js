@@ -18,6 +18,10 @@ export const orderSchema = new mongoose.Schema(
             type: Number,
             required: true,
         },
+        similarOrderId : {
+            type : String,
+            required : true,
+        },
         status: {
             type: String,
             default: "Processing",
