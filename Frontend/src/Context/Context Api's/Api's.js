@@ -1,4 +1,4 @@
-const port = 8574;
+const port = 6846;
 export const api = {
     // user api
     register: `http://localhost:${port}/user/register`,
@@ -57,7 +57,16 @@ export const api = {
     removeToWishList: `http://localhost:${port}/user/removeToList`,
 
     // place order
-    placeOrder : `http://localhost:${port}/buyProduct/checkOut`,
-    givePayment : `http://localhost:${port}/payment/give-payment`,
-    changeStatus : `http://localhost:${port}/buyProduct/change-status`
+    placeOrder: `http://localhost:${port}/buyProduct/checkOut`,
+    givePayment: `http://localhost:${port}/payment/give-payment`,
+    changeStatus: `http://localhost:${port}/buyProduct/change-status`,
+
+    // chat
+    userCreateChat: `http://localhost:${port}/chat/user-createChat`,
+    sellerCreateChat: `http://localhost:${port}/chat/seller-createChat`,
+    sendMessage: `http://localhost:${port}/chat/send-message`,
+    editMessage: `http://localhost:${port}/chat/edit-message`, // chat id as params
+    userGetChat: `http://localhost:${port}/chat/user-getChat`,
+    sellerGetChat: `http://localhost:${port}/chat/seller-getChat`,
+    delMessage: `http://localhost:${port}/chat/del-message`, // chat id as params
 };

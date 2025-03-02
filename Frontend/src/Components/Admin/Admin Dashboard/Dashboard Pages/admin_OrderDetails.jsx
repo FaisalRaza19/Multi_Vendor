@@ -2,18 +2,35 @@ import React, { useContext, useState } from 'react';
 import { useParams } from 'react-router';
 import { ContextApi } from "../../../../Context/Context.jsx";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { IoChatboxEllipsesOutline } from "react-icons/io5";
+import {useNavigate} from "react-router-dom";
 
 const orderStatuses = ['Processing', 'Shipped', 'Delivered'];
 
-const AdminOrderDetails = ({ order, shopId }) => {
-    const { showAlert } = useContext(ContextApi);
-    const { changeStatus } = useContext(ContextApi).order;
+const AdminOrderDetails = ({ orderDetail, shopId }) => {
+    const { showAlert,chat,order} = useContext(ContextApi);
+    const {seller_CreateChat} = chat;
+    const { changeStatus } = order;
     const { id } = useParams();
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     // Find the order details based on ID
-    const orderDetails = order.find((e) => e._id === id);
+    const orderDetails = orderDetail.find((e) => e._id === id);
     const [status, setStatus] = useState(orderDetails?.status || 'Processing');
+
+
+    const chatWithUser = async (id) => {
+        try {
+          setLoading(true)
+          const data = await seller_CreateChat({ userId: id,navigate,shopId});
+          showAlert(data)
+        } catch (error) {
+          return error
+        } finally {
+          setLoading(false);
+        }
+    }
 
     // Handle status selection change
     const handleStatusChange = (e) => {
@@ -84,19 +101,19 @@ const AdminOrderDetails = ({ order, shopId }) => {
                         <p>{orderDetails?.shippingAddress.city}, {orderDetails?.shippingAddress.state}</p>
                         <p>{orderDetails?.shippingAddress.country}, {orderDetails?.shippingAddress.zipCode}</p>
                     </div>
-                    <div className="flex items-center space-x-4">
-                        <label htmlFor="status" className="font-semibold">Status:</label>
-                        <select
-                            id="status"
-                            value={status}
-                            onChange={handleStatusChange}
-                            className="border rounded p-2"
-                            disabled={orderDetails?.status === "Delivered"}
-                        >
-                            {orderStatuses.map((s) => (
-                                <option key={s} value={s}>{s}</option>
-                            ))}
-                        </select>
+                    <div className="flex gap-7">
+                        <button className="flex gap-4 w-52 items-center rounded-lg mt-7 bg-blue-400 cursor-pointer text-white h-16 p-4" onClick={()=> chatWithUser(orderDetails?.user?.userId)}>
+                            {loading ? <AiOutlineLoading3Quarters size={18} className="animate-spin" /> : <IoChatboxEllipsesOutline size={18} className="text-black ml-3" />}
+                            <span>Chat With User</span>
+                        </button>
+                        <div className="flex items-center space-x-4">
+                            <label htmlFor="status" className="font-semibold">Status:</label>
+                            <select id="status" value={status} onChange={handleStatusChange} className="border rounded p-2" disabled={orderDetails?.status === "Delivered"}>
+                                {orderStatuses.map((s) => (
+                                    <option key={s} value={s}>{s}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                     <button
                         onClick={handleStatusUpdate}

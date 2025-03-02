@@ -15,10 +15,6 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@google-cloud/language": "^6.5.0",
-    "@google-cloud/vision": "^4.3.2",
-    "@payoneer/op-payment-widget-v3": "^3.53.0",
-    "@sinch/sdk-core": "^1.2.0",
     "@supabase/supabase-js": "^2.45.4",
     "axios": "^1.7.7",
     "bcryptjs": "^2.4.3",
@@ -37,8 +33,6 @@
     "nodemailer": "^6.9.15",
     "nodemon": "^3.1.7",
     "react-phone-number-input": "^3.4.10",
-    "redis": "^4.7.0",
-    "socket.io": "^4.8.1",
     "stripe": "^17.4.0",
     "uuid": "^11.1.0"
   }

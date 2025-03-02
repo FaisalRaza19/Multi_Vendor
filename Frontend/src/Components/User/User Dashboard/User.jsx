@@ -23,7 +23,7 @@ const User = ({ isAuth }) => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/orders" element={<UserOrders />} />
           <Route path="/refunds" element={<Refund />} />
-          <Route path="/inbox/*" element={<ChatPage />} />
+          <Route path={"/inbox/*" || "/inbox/:chatId"} element={<ChatPage />} />
           <Route path="/track-order" element={<TrackOrder/>} />
           <Route path="/payment-method" element={<PaymentMethods />} />
           <Route path="/wishlist" element={<WishList />} />

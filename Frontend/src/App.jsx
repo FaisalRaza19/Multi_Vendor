@@ -39,7 +39,7 @@ function App() {
   const isAuthPage = ["/login", "/signUp", "/emailVerify", "/Shop-register", "/Shop-login", "/admin-VerifyProfile", "/verifyProfile",
     "/Shop-emailVerify"].includes(authPage.pathname);
 
-  const isShop = ["/Shop", "/admin_Shop"].some(e => authPage.pathname.startsWith(e));
+  const isShop = ["/Shop", "/admin_Shop","/user-dashboard/inbox"].some(e => authPage.pathname.startsWith(e));
 
 
   const getId = () => {

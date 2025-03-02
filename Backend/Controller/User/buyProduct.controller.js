@@ -120,6 +120,7 @@ const createOrder = async (req, res) => {
                 totalPrice: shopOrderItems.reduce((acc, item) => acc + item.totalPrice, 0),
                 shippingAddress,
                 user: {
+                    userId : user._id.toString(), 
                     name: user.fullName,
                     userName: user.userName,
                     avatar: user.avatar,

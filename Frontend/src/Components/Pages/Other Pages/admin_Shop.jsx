@@ -1,20 +1,24 @@
 import React, { useState, useEffect, useContext } from "react"
 import { FaArrowLeft, FaShoppingBag, FaCalendarAlt, FaEye, FaHeart, FaShoppingCart, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { IoChatboxEllipsesOutline } from "react-icons/io5";
 import { timeLeft } from "../../../utils/timeLeft.jsx"
-import { useParams, Link } from "react-router";
+import { useParams, Link, useNavigate } from "react-router";
 import { ContextApi } from "../../../Context/Context";
 
 const admin_Shop = () => {
   const { shopId } = useParams();
-  const { showAlert, adminAuth } = useContext(ContextApi);
+  const { showAlert, adminAuth, chat } = useContext(ContextApi);
   const { userGetShop } = adminAuth;
+  const { user_CreateChat } = chat;
   const [items, setItems] = useState({});
   const [showProducts, setShowProducts] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [hoveredEvent, setHoveredEvent] = useState(null)
   const [currentImageIndex, setCurrentImageIndex] = useState({})
   const [Loading, setLoading] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
+  const navigate = useNavigate();
 
   const fetchShop = async () => {
     try {
@@ -45,6 +49,18 @@ const admin_Shop = () => {
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const chatWithSeller = async (id) => {
+    try {
+      setChatLoading(true)
+      const data = await user_CreateChat({ sellerId: id,navigate});
+      showAlert(data)
+    } catch (error) {
+      return error
+    } finally {
+      setChatLoading(false);
+    }
+  }
 
   const products = items?.products || [];
   const events = items?.events || [];
@@ -87,6 +103,10 @@ const admin_Shop = () => {
                 <p className="text-sm text-gray-600">
                   {items?.shopDescription || "Welcome to our shop! We offer a wide range of products and exciting events."}
                 </p>
+                <button className="flex gap-4 w-52 items-center rounded-lg mt-7 bg-blue-400 cursor-pointer text-white h-16 p-4" onClick={()=> chatWithSeller(items?._id)}>
+                  {chatLoading ? <AiOutlineLoading3Quarters size={18} className="animate-spin" /> : <IoChatboxEllipsesOutline size={18} className="text-black ml-3" />}
+                  <span>Chat With Seller</span>
+                </button>
               </div>
             </div>
           </div>

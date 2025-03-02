@@ -1,5 +1,5 @@
 import React, { useContext, useRef, useState, useEffect } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { io } from "socket.io-client"
 import { ContextApi } from "../../../../Context/Context.jsx"
 import { 
@@ -15,9 +15,9 @@ const socket = io("http://localhost:4000", {
   reconnectionDelay: 1000,
 })
 
-const ChatPage = () => {
+const AdminChatInbox = ({ shopId }) => {
   const { chat } = useContext(ContextApi)
-  const { sendMessage, editMessage, delMessage, user_getChats } = chat
+  const { sendMessage, editMessage, delMessage, seller_getChats } = chat
   const [contacts, setContacts] = useState([])
   const [userId, setUserId] = useState(null)
   const [message, setMessage] = useState("")
@@ -36,14 +36,13 @@ const ChatPage = () => {
   const dropdownRef = useRef(null)
   const inputRef = useRef(null)
   const fileInputRef = useRef(null)
-  const navigate = useNavigate()
 
   // Fetch chats on component mount
   useEffect(() => {
     const getChats = async () => {
       try {
         setIsLoading(true)
-        const data = await user_getChats(setUserId)
+        const data = await seller_getChats(setUserId)
         setContacts(data?.data || [])
         setError(null)
       } catch (error) {
@@ -65,7 +64,7 @@ const ChatPage = () => {
       socket.off("disconnect")
       socket.off("connect_error")
     }
-  }, [user_getChats])
+  }, [seller_getChats])
 
   // Handle socket connection for real-time messaging
   useEffect(() => {
@@ -93,13 +92,15 @@ const ChatPage = () => {
     }
 
     // Handle message edited
-    const handleMessageEdited = (updatedMessage) => {
-      if (updatedMessage.chatId === chatId) {
+    const handleMessageEdited = ({ chatId: msgChatId, messageId, message }) => {
+      if (msgChatId === chatId) {
         setSelectedChat((prev) => {
           if (!prev) return null
           return {
             ...prev,
-            messages: [...(prev.messages || []), updatedMessage]
+            messages: prev.messages.map((msg) => 
+              msg._id === messageId ? { ...msg, message, edited: true } : msg
+            ),
           }
         })
       }
@@ -234,7 +235,6 @@ const ChatPage = () => {
 
     try {
       if (editingMessage) {
-        // Edit existing message
         const updatedMessage = {
           messageId: editingMessage._id,
           message: message.trim(),
@@ -254,7 +254,6 @@ const ChatPage = () => {
         socket.emit("editMessage", updatedMessage)
         setEditingMessage(null)
       } else {
-        // Create message object for socket
         const newMessage = {
           message: message.trim(),
           senderId: userId,
@@ -268,7 +267,7 @@ const ChatPage = () => {
         socket.emit("sendMessage", newMessage)
 
         // Update with server ID if available
-        if (response?.data?._id && response.data?.sender === userId) {
+        if (response?.data?._id) {
           setSelectedChat((prev) => ({
             ...prev,
             messages: [...prev?.messages || newMessage]
@@ -315,7 +314,7 @@ const ChatPage = () => {
     } catch (error) {
       console.error("Failed to delete message:", error)
       // Refresh chat on error
-      const data = await user_getChats(setUserId)
+      const data = await seller_getChats(setUserId)
       const refreshedChat = data?.data?.find((chat) => chat._id === selectedChat._id)
       if (refreshedChat) {
         setSelectedChat(refreshedChat)
@@ -344,24 +343,24 @@ const ChatPage = () => {
           ${showSidebar ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
         {/* Sidebar Header */}
-        <div className="p-4 bg-emerald-600 text-white">
+        <div className="p-4 bg-indigo-600 text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Link to="/user-dashboard" className="p-2 hover:bg-emerald-700 rounded-full transition-colors">
+              <Link to={`/Shop/${shopId}`} className="p-2 hover:bg-indigo-700 rounded-full transition-colors">
                 <FaArrowLeft className="w-5 h-5" />
               </Link>
-              {!isSidebarCollapsed && <h1 className="text-xl font-semibold">Messages</h1>}
+              {!isSidebarCollapsed && <h1 className="text-xl font-semibold">Customer Messages</h1>}
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowSidebar(false)}
-                className="md:hidden p-2 hover:bg-emerald-700 rounded-full transition-colors"
+                className="md:hidden p-2 hover:bg-indigo-700 rounded-full transition-colors"
               >
                 <FaArrowLeft className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                className="hidden md:flex p-2 hover:bg-emerald-700 rounded-full transition-colors"
+                className="hidden md:flex p-2 hover:bg-indigo-700 rounded-full transition-colors"
               >
                 <FaChevronDown
                   className={`w-5 h-5 transform transition-transform duration-300 
@@ -378,8 +377,8 @@ const ChatPage = () => {
             <div className="relative">
               <input 
                 type="text" 
-                placeholder="Search conversations..." 
-                className="w-full py-2 px-4 pl-10 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                placeholder="Search customers..." 
+                className="w-full py-2 px-4 pl-10 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <div className="absolute left-3 top-2.5 text-gray-500">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -394,27 +393,22 @@ const ChatPage = () => {
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="flex justify-center items-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
             </div>
           ) : error ? (
             <div className="p-4 text-center text-red-500">{error}</div>
           ) : contacts.length > 0 ? (
             contacts.map((contact) => (
-              <div
-                key={contact?._id}
-                onClick={() => {
-                  setSelectedChat(contact)
-                  setShowSidebar(false)
-                }}
+              <div key={contact?._id} onClick={() => {setSelectedChat(contact),setShowSidebar(false)}}
                 className={`w-full flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors
-                  ${selectedChat?._id === contact?._id ? "bg-emerald-50" : ""}`}
+                  ${selectedChat?._id === contact._id ? "bg-indigo-50" : ""}`}
               >
                 <div className="relative flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center overflow-hidden">
-                    {contact.seller?.avatar ? (
-                      <img src={contact.seller?.avatar || "/placeholder.svg"} className="w-full h-full object-cover"/>
+                  <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden">
+                    {contact.user?.avatar ? (
+                      <img src={contact.user?.avatar || "/placeholder.svg"} className="w-full h-full object-cover"/>
                     ) : (
-                      <FaUser className="w-6 h-6 text-emerald-500" />
+                      <FaUser className="w-6 h-6 text-indigo-500" />
                     )}
                   </div>
                   {contact.online && (
@@ -424,7 +418,7 @@ const ChatPage = () => {
                 {!isSidebarCollapsed && (
                   <div className="flex-1 min-w-0 text-left">
                     <div className="flex justify-between items-start">
-                      <h3 className="font-semibold text-gray-800 truncate">{contact.seller?.name || "Unknown"}</h3>
+                      <h3 className="font-semibold text-gray-800 truncate">{contact.user?.name || "Unknown"}</h3>
                       <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
                         {formatMessageTime(contact.lastMessageTime) || ""}
                       </span>
@@ -450,29 +444,20 @@ const ChatPage = () => {
         {selectedChat ? (
           <>
             {/* Chat Header */}
-            <div className="flex items-center justify-between p-3 bg-emerald-600 text-white shadow-md">
+            <div className="flex items-center justify-between p-3 bg-indigo-600 text-white shadow-md">
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowSidebar(!showSidebar)}
-                  className="md:hidden p-2 hover:bg-emerald-700 rounded-full transition-colors"
-                >
+                <button onClick={() => setShowSidebar(!showSidebar)} className="md:hidden p-2 hover:bg-indigo-700 rounded-full transition-colors">
                   <FaBars className="w-5 h-5" />
                 </button>
-                <button
-                  onClick={() => {
-                    setSelectedChat(null)
-                    navigate("/user-dashboard/inbox")
-                  }}
-                  className="p-2 hover:bg-emerald-700 rounded-full transition-colors"
-                >
+                <button onClick={() => setSelectedChat(null)} className="p-2 hover:bg-indigo-700 rounded-full transition-colors">
                   <FaArrowLeft className="w-5 h-5" />
                 </button>
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center overflow-hidden">
-                    {selectedChat.seller?.avatar ? (
-                      <img src={selectedChat.seller?.avatar || "/placeholder.svg"} className="w-full h-full object-cover"/>
+                  <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden">
+                    {selectedChat.user?.avatar ? (
+                      <img src={selectedChat.user?.avatar || "/placeholder.svg"} className="w-full h-full object-cover"/>
                     ) : (
-                      <FaUser className="w-5 h-5 text-emerald-500" />
+                      <FaUser className="w-5 h-5 text-indigo-500" />
                     )}
                   </div>
                   {selectedChat.online && (
@@ -480,22 +465,22 @@ const ChatPage = () => {
                   )}
                 </div>
                 <div>
-                  <h2 className="font-semibold">{selectedChat.seller?.name || "Unknown"}</h2>
-                  <p className={`text-xs ${selectedChat.online ? "text-emerald-200" : "text-emerald-100"}`}>
+                  <h2 className="font-semibold">{selectedChat.user?.name || "Unknown"}</h2>
+                  <p className={`text-xs ${selectedChat.online ? "text-indigo-200" : "text-indigo-100"}`}>
                     {selectedChat.online ? "Online" : "Offline"}
                   </p>
                 </div>
               </div>
-              <button className="p-2 hover:bg-emerald-700 rounded-full transition-colors">
+              <button className="p-2 hover:bg-indigo-700 rounded-full transition-colors">
                 <FaEllipsisV className="w-5 h-5" />
               </button>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4" 
-              style={{ backgroundImage: "url('https://i.pinimg.com/originals/97/c0/07/97c00759d90d786d9b6a5348c6f5d52d.jpg')", backgroundSize: "cover" }}
+              style={{ backgroundImage: "url('https://i.pinimg.com/originals/8f/ba/cb/8fbacbd464e996966eb9d4a6b7a9c21e.jpg')", backgroundSize: "cover" }}
             >
-              {selectedChat.messages && selectedChat.messages.length > 0 ? (
+              {selectedChat?.messages && selectedChat?.messages.length > 0 ? (
                 selectedChat.messages.map((msg) => (
                   <div key={msg?._id} className="space-y-4">
                     <div className={`flex ${msg?.sender === userId ? "justify-end" : "justify-start"}`}>
@@ -523,8 +508,8 @@ const ChatPage = () => {
                               )}
                             </div>
                           )}
-                          <div className={`rounded-lg p-3 shadow-sm ${msg?.sender === userId ? "bg-emerald-500 text-white rounded-br-none"
-                           : "bg-white text-gray-800 rounded-bl-none"}`}
+                          <div className={`rounded-lg p-3 shadow-sm ${msg?.sender === userId ? "bg-indigo-500 text-white rounded-br-none"
+                                : "bg-white text-gray-800 rounded-bl-none"}`}
                           >
                             {msg?.image && (
                               <div className="mb-2 rounded-md overflow-hidden">
@@ -535,20 +520,20 @@ const ChatPage = () => {
                             <div className="flex items-center justify-end gap-1 mt-1">
                               {msg?.edited && (
                                 <span
-                                  className={`text-xs ${msg.sender === userId ? "text-emerald-100" : "text-gray-400"}`}
+                                  className={`text-xs ${msg?.sender === userId ? "text-indigo-100" : "text-gray-400"}`}
                                 >
                                   (edited)
                                 </span>
                               )}
-                              <p className={`text-xs ${msg?.sender === userId ? "text-emerald-100" : "text-gray-500"}`}>
+                              <p className={`text-xs ${msg?.sender === userId ? "text-indigo-100" : "text-gray-500"}`}>
                                 {formatMessageTime(msg?.timestamp)}
                               </p>
                               {msg?.sender === userId && (
                                 <span className="ml-1">
                                   {msg.sending ? (
-                                    <div className="w-3 h-3 rounded-full border-2 border-emerald-100 border-t-transparent animate-spin"></div>
+                                    <div className="w-3 h-3 rounded-full border-2 border-indigo-100 border-t-transparent animate-spin"></div>
                                   ) : (
-                                    <FaCheckDouble className={`w-4 h-4 text-emerald-100`} />
+                                    <FaCheckDouble className={`w-4 h-4 text-indigo-100`} />
                                   )}
                                 </span>
                               )}
@@ -605,7 +590,7 @@ const ChatPage = () => {
                 <div className="flex gap-2">
                   <button 
                     type="button" 
-                    className="p-3 text-gray-500 hover:text-emerald-500 transition-colors"
+                    className="p-3 text-gray-500 hover:text-indigo-500 transition-colors"
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                   >
                     <FaSmile className="w-5 h-5" />
@@ -620,14 +605,14 @@ const ChatPage = () => {
                   />
                   <button 
                     type="button" 
-                    className="p-3 text-gray-500 hover:text-emerald-500 transition-colors"
+                    className="p-3 text-gray-500 hover:text-indigo-500 transition-colors"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <FaPaperclip className="w-5 h-5" />
                   </button>
                   <button 
                     type="button" 
-                    className="p-3 text-gray-500 hover:text-emerald-500 transition-colors md:hidden"
+                    className="p-3 text-gray-500 hover:text-indigo-500 transition-colors md:hidden"
                   >
                     <FaCamera className="w-5 h-5" />
                   </button>
@@ -638,7 +623,7 @@ const ChatPage = () => {
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={editingMessage ? "Edit message..." : "Type a message..."}
                   className="flex-1 p-3 bg-gray-100 rounded-full outline-none 
-                    focus:ring-2 focus:ring-emerald-500 transition-shadow"
+                    focus:ring-2 focus:ring-indigo-500 transition-shadow"
                   ref={inputRef}
                 />
                 <button
@@ -649,7 +634,7 @@ const ChatPage = () => {
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : editingMessage
                         ? "bg-green-500 text-white hover:bg-green-600"
-                        : "bg-emerald-500 text-white hover:bg-emerald-600"
+                        : "bg-indigo-500 text-white hover:bg-indigo-600"
                     }`}
                 >
                   {editingMessage ? <FaCheck className="w-5 h-5" /> : <FaPaperPlane className="w-5 h-5" />}
@@ -672,14 +657,14 @@ const ChatPage = () => {
         ) : (
           <div className="flex-1 flex items-center justify-center bg-gray-50">
             <div className="text-center p-8 bg-white rounded-xl shadow-md max-w-md mx-4">
-              <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-6">
-                <FaUser className="w-10 h-10 text-emerald-500" />
+              <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-6">
+                <FaUser className="w-10 h-10 text-indigo-500" />
               </div>
               <h3 className="text-xl font-semibold text-gray-800 mb-3">No chat selected</h3>
-              <p className="text-gray-600 mb-6">Select a conversation from the sidebar to start messaging</p>
+              <p className="text-gray-600 mb-6">Select a customer conversation from the sidebar to start messaging</p>
               <button
                 onClick={() => setShowSidebar(true)}
-                className="md:hidden px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+                className="md:hidden px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
               >
                 View Conversations
               </button>
@@ -691,4 +676,4 @@ const ChatPage = () => {
   )
 }
 
-export default ChatPage
+export default AdminChatInbox

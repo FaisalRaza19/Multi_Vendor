@@ -2,20 +2,25 @@ import React, { useState, useEffect, useContext } from "react"
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import { ContextApi } from "../../../Context/Context";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { IoChatboxEllipsesOutline } from "react-icons/io5";
 import { useParams } from "react-router-dom";
 import Review from "./Review.jsx"
 import SuggestedItems from "./sugestedItems.jsx";
+import {useNavigate} from "react-router-dom"
 
 const ShowProduct = () => {
   const { id } = useParams();
-  const { fetchProductById } = useContext(ContextApi).adminProducts;
+  const { showAlert,chat,adminProducts} = useContext(ContextApi);
+  const { user_CreateChat } = chat;
+  const { fetchProductById } = adminProducts;
   const [items, setItems] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [Loading, setLoading] = useState(false);
+  const navigate = useNavigate()
 
   const fetchProduct = async () => {
     try {
-      const data = await fetchProductById({productId : id});
+      const data = await fetchProductById({ productId: id });
       setLoading(true)
       setItems(data.product);
     } catch (error) {
@@ -28,6 +33,18 @@ const ShowProduct = () => {
   useEffect(() => {
     fetchProduct();
   }, [id]);
+
+  const chatWithSeller = async (id) => {
+    try {
+      setLoading(true)
+      const data = await user_CreateChat({ sellerId: id,navigate});
+      showAlert(data)
+    } catch (error) {
+      return error
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (items?.images?.length > 0) {
@@ -106,9 +123,15 @@ const ShowProduct = () => {
                   <span className="text-2xl font-bold">${items?.actualPrice}</span>
                 )}
               </div>
-              <button className="w-full max-w-[300px] py-2 mt-4 rounded-lg bg-blue-500 hover:bg-blue-600 text-white">
-                Add To Cart
-              </button>
+              <div className="flex gap-4">
+                <button onClick={(e)=> chatWithSeller(items?.shopInfo?.shopId)} className="flex gap-3 w-52 items-center justify-center rounded-lg mt-7 bg-blue-400 cursor-pointer text-white h-12 p-3">
+                  {Loading ? <AiOutlineLoading3Quarters size={18} className="animate-spin" /> : <IoChatboxEllipsesOutline size={18} className="text-black" />}
+                  <span>Chat With Seller</span>
+                </button>
+                <button className="w-52 max-w-[200px] p-3 mt-7 rounded-lg bg-blue-500 hover:bg-blue-600 text-white">
+                  Add To Cart
+                </button>
+              </div>
             </div>
           </div>
           <Review />

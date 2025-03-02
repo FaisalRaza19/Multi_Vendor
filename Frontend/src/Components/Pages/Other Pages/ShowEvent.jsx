@@ -2,18 +2,23 @@ import React, { useState, useEffect, useContext } from "react"
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import { ContextApi } from "../../../Context/Context";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { IoChatboxEllipsesOutline } from "react-icons/io5";
 import { useParams } from "react-router-dom";
 import Review from "./Review.jsx"
 import SuggestedItems from "./sugestedItems.jsx";
 import { timeLeft } from "../../../utils/timeLeft.jsx"
+import {useNavigate} from "react-router-dom";
 
 const ShowEvent = () => {
   const { id } = useParams();
-  const { fetchEventById } = useContext(ContextApi).adminEvents;
+  const { showAlert,chat,adminEvents} = useContext(ContextApi);
+  const { user_CreateChat } = chat;
+  const { fetchEventById } = adminEvents;
   const [items, setItems] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [Loading, setLoading] = useState(false);
   const [remainingTime, setRemainingTime] = useState(null)
+  const navigate = useNavigate();
 
   const fetchProduct = async () => {
     try {
@@ -30,6 +35,18 @@ const ShowEvent = () => {
   useEffect(() => {
     fetchProduct();
   }, [id]);
+
+  const chatWithSeller = async (id) => {
+    try {
+      setLoading(true)
+      const data = await user_CreateChat({ sellerId: id,navigate});
+      showAlert(data)
+    } catch (error) {
+      return error
+    } finally {
+      setLoading(false);
+    }
+  }
 
   // time left
   useEffect(() => {
@@ -118,13 +135,19 @@ const ShowEvent = () => {
                 )}
               </div>
               <span className='font-bold'>{remainingTime}</span>
-              <button className={`w-full py-1 mt-2 rounded-lg ${new Date(items?.eventStart) > new Date() ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-blue-500 hover:bg-blue-600 text-white"
+              <div className="flex gap-4">
+                <button onClick={(e)=> chatWithSeller(items?.shopInfo?.shopId)} className="flex gap-3 w-52 items-center justify-center rounded-lg mt-7 bg-blue-400 cursor-pointer text-white h-12 p-3">
+                  {Loading ? <AiOutlineLoading3Quarters size={18} className="animate-spin" /> : <IoChatboxEllipsesOutline size={18} className="text-black" />}
+                  <span>Chat With Seller</span>
+                </button>
+                <button className={`w-60 h-12 mt-7 rounded-lg ${new Date(items?.eventStart) > new Date() ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-500 hover:bg-blue-600 text-white"
                   }`}
-                disabled={new Date(items?.eventStart) > new Date()}
-              >
-                {new Date(items?.eventStart) > new Date() ? "Coming Soon" : "Add To Cart"}
-              </button>
+                  disabled={new Date(items?.eventStart) > new Date()}
+                >
+                  {new Date(items?.eventStart) > new Date() ? "Coming Soon" : "Add To Cart"}
+                </button>
+              </div>
             </div>
           </div>
           <Review />

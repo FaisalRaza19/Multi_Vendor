@@ -1,15 +1,25 @@
 import React, { useState, useContext, useEffect } from "react"
 import { MdShoppingBag, MdLocalShipping, MdDoneAll, MdAccessTime, MdLocationOn, MdCalendarToday, MdArrowForward, MdArrowBack, MdHeadphones, MdMouse, MdMonitor } from "react-icons/md"
 import { ContextApi } from "../../../../Context/Context.jsx"
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { useNavigate} from "react-router";
 
 const OrderTracking = () => {
-    const { FetchUser } = useContext(ContextApi).userAuth;
+    const { showAlert,userAuth,chat} = useContext(ContextApi);
+    const { user_CreateChat } = chat;
+    const { FetchUser } = userAuth;
+    const {sellerId,setSellerId} = useState("");
     const [orders, setOrders] = useState([]);
     const [selectedOrder, setSelectedOrder] = useState(null)
+    const [Loading,setLoading] = useState(false);
+    const navigate = useNavigate()
 
     const fetchData = async () => {
         try {
             const data = await FetchUser();
+            const sellerId = data.data.orders[0].items[0]?.shopInfo?.shopId;
+            setSellerId(sellerId)
+            console.log(sellerId);
             setOrders(data.data.orders);
         } catch (error) {
             return error
@@ -19,9 +29,20 @@ const OrderTracking = () => {
         fetchData()
     }, []);
 
+    const chatWithSeller = async (id) => {
+        try {
+          setLoading(true)
+          const data = await user_CreateChat({ sellerId: id,navigate});
+          showAlert(data)
+        } catch (error) {
+          return error
+        } finally {
+          setLoading(false);
+        }
+    }
+
     const handleSelectedOrder = (id) => {
         const selectedOrder = orders.find((e) => e._id === id);
-        console.log(selectedOrder);
         setSelectedOrder(selectedOrder);
     }
 
@@ -257,8 +278,8 @@ const OrderTracking = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <button className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                                    Contact Support
+                                <button onClick={()=> chatWithSeller(sellerId)} className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                   {Loading ? <AiOutlineLoading3Quarters size={18} className="animate-spin" /> : "Contact Support"}
                                 </button>
                             </div>
                         </div>

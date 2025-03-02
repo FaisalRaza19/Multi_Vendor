@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { jwtDecode } from 'jwt-decode'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Alert from "../../Forms/Alert.jsx";
 import Admin_Navbar from './adminNavbar.jsx'
 import Admin_Sidebar from './adminSidebar.jsx'
@@ -11,10 +11,13 @@ import Admin_OrderDetails from './Dashboard Pages/admin_OrderDetails.jsx'
 import AdminProducts from './Dashboard Pages/admin_Products.jsx'
 import AdminAddProduct from './Dashboard Pages/admin_CreateProduct.jsx'
 import AdminEvents from './Dashboard Pages/admin_Events.jsx';
-import AdminAddEvent from './Dashboard Pages/admin_CreateEvent.jsx'
+import AdminAddEvent from './Dashboard Pages/admin_CreateEvent.jsx';
+import Admin_ChatInbox from "./Dashboard Pages/admin_ChatInbox.jsx"
 import AdminCreateCoupon from './Dashboard Pages/admin_CreateCoupon.jsx'
 
 const Admin = ({ isAuth}) => {
+    const authPage = useLocation();
+    const isChatInbox = ["/inbox" || "/inbox/:chatId"].some((e)=> authPage.pathname.endsWith(e));
     const [shopId, setShopId] = useState();
     const [order,setOrder] = useState([]);
 
@@ -32,20 +35,21 @@ const Admin = ({ isAuth}) => {
             <Alert />
             </div>
             <div className="min-h-screen bg-gray-50">
-                <Admin_Navbar isAuth={isAuth} shopId={shopId}/>
+                {!isChatInbox && <Admin_Navbar isAuth={isAuth} shopId={shopId}/>}
                 <div className='relative flex'>
-                    <Admin_Sidebar shopId={shopId} />
-                    <main className="flex-1 lg:ml-72">
+                    {!isChatInbox && <Admin_Sidebar shopId={shopId} />}
+                    <main className={!isChatInbox ? "flex-1 lg:ml-72" : "flex-1"}>
                         <Routes>
                             <Route path="/" element={<Navigate to={`/Shop/${shopId}/dashboard`} />} />
                             <Route path="/dashboard" element={<Dashboard shopId={shopId} setOrder={setOrder}/>} />
                             <Route path="/settings" element={<AdminProfile/>} />
                             <Route path="/orders" element={<AdminOrders shopId={shopId} setOrder={setOrder}/>} />
-                            <Route path="/order/:id" element={<Admin_OrderDetails order={order} shopId={shopId}/>} />
+                            <Route path="/order/:id" element={<Admin_OrderDetails orderDetail={order} shopId={shopId}/>} />
                             <Route path="/products" element={<AdminProducts/>}/>
                             <Route path="/createProduct" element={<AdminAddProduct/>}/>
                             <Route path="/events" element={<AdminEvents/>}/>
                             <Route path="/createEvent" element={<AdminAddEvent/>}/>
+                            <Route path="/inbox" element={<Admin_ChatInbox shopId={shopId}/>}/>
                             <Route path="/discounts" element={<AdminCreateCoupon/>}/>
                         </Routes>
                     </main>

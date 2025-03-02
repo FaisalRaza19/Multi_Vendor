@@ -23,6 +23,8 @@ import { addToCart, removeFromCart} from "./Context Api's/User/cart.jsx";
 
 import {placeOrder,givePayment,changeStatus} from "./Context Api's/User/order.jsx"
 
+import {user_CreateChat,seller_CreateChat,sendMessage,editMessage,delMessage,user_getChats,seller_getChats} from "./Context Api's/chat/chat.js";
+
 export const ContextApi = createContext();
 
 
@@ -96,6 +98,7 @@ export const ContextProvider = ({ children }) => {
     const userReviews = { addReview, delReview, editReview, giveLike, giveUnLike };
     const userWishList = { addToWishList, removeToWishList };
     const order = {placeOrder,givePayment,changeStatus};
+    const chat = {user_CreateChat,seller_CreateChat,sendMessage,editMessage,delMessage,user_getChats,seller_getChats}
 
     const onClose = () => setAlert(null);
     const showAlert = (data) => {
@@ -106,7 +109,8 @@ export const ContextProvider = ({ children }) => {
         <ContextApi.Provider value={{
             toggleSidebar, isOpen, alert, showAlert, onClose, userAuth, adminAuth,
             adminProducts, adminEvents, adminCoupon, userReviews, userWishList,
-            cart, setCart, cartTotal, addToCart: addToCartHandler, removeFromCart: removeFromCartHandler,updateQuantity,order
+            cart, setCart, cartTotal, addToCart: addToCartHandler, removeFromCart: removeFromCartHandler,updateQuantity,order,
+            chat
         }}>
             {children}
         </ContextApi.Provider>
