@@ -390,7 +390,7 @@ const userVerifyJWT = async (req, res) => {
     try {
         const userId = req.user?._id;
         if (!userId) {
-            return res.status(400).json({ message: "User did not found" })
+            return res.status(400).json({message: "User did not found" })
         };
         return res.status(200).json({ status : 200, message: "token is valid", data: true })
     } catch (error) {

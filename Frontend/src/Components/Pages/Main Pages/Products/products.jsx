@@ -24,8 +24,8 @@ const Products = () => {
       setLoading(true);
       const data = await getAllProducts();
       showAlert(data);
-      setItems(data.allProducts);
-      setTotalProducts(data.allProducts.length);
+      setItems(data?.allProducts);
+      setTotalProducts(data?.allProducts?.length);
     } catch (error) {
       console.error(error.message);
     } finally {
@@ -41,7 +41,7 @@ const Products = () => {
   const addToWish = async (id) => {
     try {
       const data = await addToWishList({ id });
-      console.log(data);
+      showAlert(data)
     } catch (error) {
       return error
     }
@@ -49,7 +49,7 @@ const Products = () => {
   // Calculate the displayed products based on the current page
   const startIndex = (currentPage - 1) * productsPerPage;
   const endIndex = startIndex + visibleProducts;
-  const displayedProducts = items.slice(startIndex, endIndex);
+  const displayedProducts = items?.slice(startIndex, endIndex);
 
   // Show 10 more products
   const handleShowMore = () => {
@@ -87,7 +87,7 @@ const Products = () => {
       ) : (
         <div className="relative mt-32">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-6">
-            {displayedProducts.map((e) => (
+            {displayedProducts?.length > 0 ? (displayedProducts.map((e) => (
               <div key={e?._id} className="min-w-[270px] flex-shrink-0 ml-7 border rounded p-2 shadow-md text-sm mb-6">
                 <Link to={`/product/${e?.category?.replace(/\s+/g, "-")}/${e?._id}`} className="flex justify-center">
                   <img
@@ -119,7 +119,11 @@ const Products = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            ))) : (
+              <div className="flex items-center justify-center">
+                <span>Products not found</span>
+              </div>
+            )}
           </div>
 
           {/* Show More Button */}
